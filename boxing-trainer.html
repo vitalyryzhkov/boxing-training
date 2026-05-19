@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Boxing Trainer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: #0a0a0a;
+    color: #f5f5f5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* SCREENS */
+  .screen { flex: 1; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
+  .screen.active { display: flex; }
+
+  /* SETUP SCREEN */
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .header p { font-size: 14px; color: #888; margin-top: 4px; }
+
+  .setting-group { margin-bottom: 24px; }
+  .setting-label { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+
+  .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .option-btn {
+    background: #1a1a1a;
+    border: 1.5px solid #2a2a2a;
+    color: #ccc;
+    padding: 14px 12px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .option-btn:active { transform: scale(0.97); }
+  .option-btn.active {
+    background: #ff4444;
+    border-color: #ff4444;
+    color: #fff;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1a1a1a;
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+  .toggle-row .label { font-size: 15px; font-weight: 500; }
+  .toggle-row .sub { font-size: 12px; color: #888; margin-top: 2px; }
+  .toggle {
+    width: 50px; height: 28px; background: #2a2a2a; border-radius: 14px;
+    position: relative; cursor: pointer; transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 22px; height: 22px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle.on { background: #ff4444; }
+  .toggle.on::after { transform: translateX(22px); }
+
+  .slider-row { background: #1a1a1a; padding: 14px 16px; border-radius: 12px; margin-bottom: 8px; }
+  .slider-row .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slider-row .val { font-size: 18px; font-weight: 700; color: #ff4444; }
+  input[type="range"] {
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 6px; background: #2a2a2a; border-radius: 3px; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 22px; height: 22px; background: #ff4444; border-radius: 50%; cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px; background: #ff4444; border-radius: 50%; cursor: pointer; border: none;
+  }
+
+  .start-btn {
+    background: #ff4444;
+    color: #fff;
+    border: none;
+    padding: 18px;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: auto;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: transform 0.1s;
+  }
+  .start-btn:active { transform: scale(0.98); }
+
+  /* TRAINING SCREEN */
+  #training { padding: 0; }
+  .training-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .round-info { font-size: 14px; color: #888; font-weight: 600; }
+  .round-info b { color: #fff; }
+  .back-btn {
+    background: transparent; border: none; color: #888;
+    font-size: 14px; cursor: pointer; padding: 4px 8px;
+  }
+
+  .timer-section {
+    padding: 24px 20px;
+    text-align: center;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .timer {
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .timer.rest { color: #4a9eff; }
+  .timer.work { color: #fff; }
+  .phase-label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #888;
+    margin-top: 6px;
+    font-weight: 600;
+  }
+
+  .combo-display {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    min-height: 200px;
+  }
+  .combo-type {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #888;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .combo-type.attack { color: #ff4444; }
+  .combo-type.defense { color: #4a9eff; }
+  .combo-type.footwork { color: #4ade80; }
+
+  .combo-text {
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.2;
+    word-break: break-word;
+    letter-spacing: -1px;
+  }
+  .combo-numbers {
+    font-size: 56px;
+    font-weight: 900;
+    color: #ff4444;
+    margin-top: 12px;
+    letter-spacing: 4px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid #1a1a1a;
+  }
+  .control-btn {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1.5px solid #2a2a2a;
+    color: #fff;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .control-btn:active { transform: scale(0.96); }
+  .control-btn.primary {
+    background: #ff4444;
+    border-color: #ff4444;
+  }
+  .control-btn.danger {
+    background: transparent;
+    color: #ff4444;
+    border-color: #ff4444;
+  }
+
+  /* PULSE ANIMATION on new combo */
+  @keyframes pulse {
+    0% { transform: scale(0.92); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .combo-display.show .combo-type,
+  .combo-display.show .combo-text,
+  .combo-display.show .combo-numbers {
+    animation: pulse 0.3s ease-out;
+  }
+
+  /* COUNTDOWN BIG */
+  .countdown-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .countdown-overlay.show { display: flex; }
+  .countdown-num {
+    font-size: 200px;
+    font-weight: 900;
+    color: #ff4444;
+    animation: countPulse 1s ease-out;
+  }
+  @keyframes countPulse {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* DONE SCREEN */
+  .done-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .done-content h2 { font-size: 36px; margin-bottom: 12px; }
+  .done-content p { color: #888; font-size: 16px; margin-bottom: 32px; }
+  .done-stats {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 20px 32px;
+    margin-bottom: 32px;
+  }
+  .done-stats .stat { font-size: 14px; color: #888; margin-bottom: 4px; }
+  .done-stats .stat b { color: #fff; font-size: 18px; font-weight: 700; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ SETUP SCREEN ============ -->
+<div class="screen active" id="setup">
+  <div class="header">
+    <h1>🥊 Boxing Trainer</h1>
+    <p>Тренировка с голосовыми комбинациями</p>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Уровень</div>
+    <div class="option-grid" id="levelOpts">
+      <button class="option-btn active" data-level="beginner">Новичок</button>
+      <button class="option-btn" data-level="medium">Средний</button>
+      <button class="option-btn" data-level="advanced">Продвинутый</button>
+      <button class="option-btn" data-level="mixed">Все уровни</button>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Раунды</div>
+    <div class="slider-row">
+      <div class="top">
+        <span>Количество раундов</span>
+        <span class="val" id="roundsVal">3</span>
+      </div>
+      <input type="range" id="roundsSlider" min="1" max="12" value="3">
+    </div>
+    <div class="slider-row">
+      <div class="top">
+        <span>Длина раунда (мин)</span>
+        <span class="val" id="workVal">3</span>
+      </div>
+      <input type="range" id="workSlider" min="1" max="5" value="3" step="1">
+    </div>
+    <div class="slider-row">
+      <div class="top">
+        <span>Отдых (сек)</span>
+        <span class="val" id="restVal">60</span>
+      </div>
+      <input type="range" id="restSlider" min="15" max="120" value="60" step="15">
+    </div>
+    <div class="slider-row">
+      <div class="top">
+        <span>Темп команд (сек)</span>
+        <span class="val" id="paceVal">5</span>
+      </div>
+      <input type="range" id="paceSlider" min="3" max="12" value="5" step="1">
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Включить в тренировку</div>
+    <div class="toggle-row" data-toggle="attacks">
+      <div>
+        <div class="label">Ударные комбинации</div>
+        <div class="sub">Раз, два, три, четыре...</div>
+      </div>
+      <div class="toggle on" id="t-attacks"></div>
+    </div>
+    <div class="toggle-row" data-toggle="defense">
+      <div>
+        <div class="label">Защитные действия</div>
+        <div class="sub">Уклоны, нырки, блоки</div>
+      </div>
+      <div class="toggle on" id="t-defense"></div>
+    </div>
+    <div class="toggle-row" data-toggle="footwork">
+      <div>
+        <div class="label">Работа ног</div>
+        <div class="sub">Шаги, развороты, разрывы</div>
+      </div>
+      <div class="toggle on" id="t-footwork"></div>
+    </div>
+    <div class="toggle-row" data-toggle="bell">
+      <div>
+        <div class="label">Звук гонга</div>
+        <div class="sub">Начало и конец раундов</div>
+      </div>
+      <div class="toggle on" id="t-bell"></div>
+    </div>
+  </div>
+
+  <button class="start-btn" id="startBtn">Начать тренировку</button>
+</div>
+
+<!-- ============ TRAINING SCREEN ============ -->
+<div class="screen" id="training">
+  <div class="training-header">
+    <button class="back-btn" id="backBtn">← Назад</button>
+    <div class="round-info">Раунд <b id="roundNum">1</b> / <b id="roundTotal">3</b></div>
+    <div style="width: 50px;"></div>
+  </div>
+
+  <div class="timer-section">
+    <div class="timer work" id="timer">3:00</div>
+    <div class="phase-label" id="phaseLabel">Работа</div>
+  </div>
+
+  <div class="combo-display" id="comboDisplay">
+    <div class="combo-type attack" id="comboType">Удары</div>
+    <div class="combo-text" id="comboText">Готовься...</div>
+    <div class="combo-numbers" id="comboNumbers"></div>
+  </div>
+
+  <div class="controls">
+    <button class="control-btn" id="skipBtn">Пропустить</button>
+    <button class="control-btn primary" id="pauseBtn">Пауза</button>
+    <button class="control-btn danger" id="stopBtn">Стоп</button>
+  </div>
+</div>
+
+<!-- ============ DONE SCREEN ============ -->
+<div class="screen" id="done">
+  <div class="done-content">
+    <h2>🥊 Готово!</h2>
+    <p>Тренировка завершена</p>
+    <div class="done-stats">
+      <div class="stat">Раундов: <b id="doneRounds">3</b></div>
+      <div class="stat">Общее время: <b id="doneTime">9:00</b></div>
+      <div class="stat">Комбинаций: <b id="doneCombos">0</b></div>
+    </div>
+    <button class="start-btn" id="restartBtn" style="margin-top: 0;">Новая тренировка</button>
+  </div>
+</div>
+
+<!-- COUNTDOWN OVERLAY -->
+<div class="countdown-overlay" id="countdown">
+  <div class="countdown-num" id="countdownNum">3</div>
+</div>
+
+<script>
+// ============ DATA ============
+const COMBOS = {
+  beginner: [
+    { numbers: [1], text: "Раз" },
+    { numbers: [2], text: "Два" },
+    { numbers: [1, 1], text: "Раз, раз" },
+    { numbers: [1, 2], text: "Раз, два" },
+    { numbers: [2, 1], text: "Два, раз" },
+    { numbers: [1, 2, 1], text: "Раз, два, раз" },
+    { numbers: [1, 1, 2], text: "Раз, раз, два" },
+    { numbers: [1, 2, 3], text: "Раз, два, три" },
+  ],
+  medium: [
+    { numbers: [1, 2, 3, 2], text: "Раз, два, три, два" },
+    { numbers: [1, 2, 5, 2], text: "Раз, два, пять, два" },
+    { numbers: [1, 1, 2, 3], text: "Раз, раз, два, три" },
+    { numbers: [2, 3, 2], text: "Два, три, два" },
+    { numbers: [1, 6, 3, 2], text: "Раз, шесть, три, два" },
+    { numbers: [1, 2, 5, 4], text: "Раз, два, пять, четыре" },
+    { numbers: [3, 2, 3, 2], text: "Три, два, три, два" },
+    { numbers: [1, 2, 3, 4], text: "Раз, два, три, четыре" },
+    { numbers: [1, 2, 1, 2], text: "Раз, два, раз, два" },
+    { numbers: [2, 1, 2, 3], text: "Два, раз, два, три" },
+  ],
+  advanced: [
+    { numbers: [1, 2, 5, 2, 3], text: "Раз, два, пять, два, три" },
+    { numbers: [1, 1, 2, 5, 2], text: "Раз, раз, два, пять, два" },
+    { numbers: [1, 2, 3, 4, 3, 2], text: "Раз, два, три, четыре, три, два" },
+    { numbers: [1, 6, 3, 2, 5, 2], text: "Раз, шесть, три, два, пять, два" },
+    { numbers: [2, 3, 2, 5, 2], text: "Два, три, два, пять, два" },
+    { numbers: [1, 2, 1, 6, 3, 2], text: "Раз, два, раз, шесть, три, два" },
+    { numbers: [1, 1, 2, 3, 4, 2], text: "Раз, раз, два, три, четыре, два" },
+    { numbers: [3, 2, 5, 4, 3, 2], text: "Три, два, пять, четыре, три, два" },
+    { numbers: [1, 2, 5, 2, 3, 2, 5], text: "Раз, два, пять, два, три, два, пять" },
+  ],
+};
+
+const DEFENSE = [
+  "Уклон влево",
+  "Уклон вправо",
+  "Нырок",
+  "Двойной нырок",
+  "Блок двойки",
+  "Подставка",
+  "Сайдстеп",
+  "Отбив",
+  "Уклон, контратака двойкой",
+  "Нырок под хук, ответ снизу",
+];
+
+const FOOTWORK = [
+  "Шаг вперёд, двойка",
+  "Шаг назад, джеб",
+  "Сайдстеп влево",
+  "Сайдстеп вправо",
+  "Разрыв дистанции",
+  "Челнок",
+  "Разворот на левой",
+  "Войти в клинч",
+  "Выход с двойкой",
+  "Шаг в сторону, кросс",
+];
+
+const LEGEND = `Удары по номерам:
+1 — джеб (передняя рука)
+2 — кросс (задняя рука)
+3 — боковой левый (хук)
+4 — боковой правый
+5 — апперкот левый
+6 — апперкот правый`;
+
+// ============ STATE ============
+let state = {
+  level: 'beginner',
+  rounds: 3,
+  workSec: 180,
+  restSec: 60,
+  paceSec: 5,
+  attacks: true,
+  defense: true,
+  footwork: true,
+  bell: true,
+  // runtime
+  currentRound: 1,
+  phase: 'work', // 'work' | 'rest'
+  timeLeft: 0,
+  paused: false,
+  comboCount: 0,
+  startTime: 0,
+};
+
+let timerInterval = null;
+let comboInterval = null;
+let voices = [];
+let ruVoice = null;
+
+// ============ HELPERS ============
+const $ = id => document.getElementById(id);
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+function fmtTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// ============ AUDIO ============
+function loadVoices() {
+  voices = speechSynthesis.getVoices();
+  ruVoice = voices.find(v => v.lang.startsWith('ru')) || voices.find(v => v.lang.startsWith('ru-RU'));
+}
+if ('speechSynthesis' in window) {
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ru-RU';
+  if (ruVoice) u.voice = ruVoice;
+  u.rate = 1.1;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+  speechSynthesis.speak(u);
+}
+
+// Web Audio bell — simple ding via oscillator
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playBell(freq = 800, duration = 0.6) {
+  if (!state.bell) return;
+  try {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) { console.warn(e); }
+}
+function playRoundStart() {
+  playBell(900, 0.4);
+  setTimeout(() => playBell(900, 0.4), 200);
+  setTimeout(() => playBell(900, 0.8), 400);
+}
+function playRoundEnd() {
+  playBell(500, 1.0);
+  setTimeout(() => playBell(400, 1.5), 300);
+}
+function playTick() { playBell(1200, 0.1); }
+
+// ============ SETUP UI ============
+// Level buttons
+$('levelOpts').addEventListener('click', e => {
+  const btn = e.target.closest('.option-btn');
+  if (!btn) return;
+  document.querySelectorAll('#levelOpts .option-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.level = btn.dataset.level;
+});
+
+// Sliders
+function bindSlider(id, prop, valId, multiplier = 1) {
+  const s = $(id), v = $(valId);
+  s.addEventListener('input', () => {
+    const val = parseInt(s.value);
+    state[prop] = val * multiplier;
+    v.textContent = val;
+  });
+}
+bindSlider('roundsSlider', 'rounds', 'roundsVal');
+bindSlider('workSlider', 'workSec', 'workVal', 60);
+bindSlider('restSlider', 'restSec', 'restVal');
+bindSlider('paceSlider', 'paceSec', 'paceVal');
+
+// Toggles
+document.querySelectorAll('.toggle-row').forEach(row => {
+  row.addEventListener('click', () => {
+    const key = row.dataset.toggle;
+    const t = row.querySelector('.toggle');
+    t.classList.toggle('on');
+    state[key] = t.classList.contains('on');
+  });
+});
+
+// ============ TRAINING LOGIC ============
+$('startBtn').addEventListener('click', async () => {
+  // Need at least one category
+  if (!state.attacks && !state.defense && !state.footwork) {
+    alert('Выбери хотя бы один тип упражнений!');
+    return;
+  }
+
+  // Wake audio context with user gesture (mobile requirement)
+  try { getCtx(); } catch(e) {}
+  // Wake speech synthesis
+  if ('speechSynthesis' in window) {
+    const u = new SpeechSynthesisUtterance('');
+    speechSynthesis.speak(u);
+  }
+
+  // Keep screen on if possible
+  requestWakeLock();
+
+  showScreen('training');
+  state.currentRound = 1;
+  state.comboCount = 0;
+  state.startTime = Date.now();
+  $('roundTotal').textContent = state.rounds;
+
+  await countdownStart();
+  startRound();
+});
+
+async function countdownStart() {
+  const overlay = $('countdown');
+  const num = $('countdownNum');
+  overlay.classList.add('show');
+  for (let i = 3; i > 0; i--) {
+    num.textContent = i;
+    num.style.animation = 'none';
+    void num.offsetWidth;
+    num.style.animation = 'countPulse 1s ease-out';
+    speak(String(i));
+    playTick();
+    await sleep(1000);
+  }
+  num.textContent = 'Бой!';
+  speak('Бой');
+  playRoundStart();
+  await sleep(800);
+  overlay.classList.remove('show');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function startRound() {
+  $('roundNum').textContent = state.currentRound;
+  state.phase = 'work';
+  state.timeLeft = state.workSec;
+  $('timer').classList.remove('rest');
+  $('timer').classList.add('work');
+  $('phaseLabel').textContent = 'Работа';
+  updateTimer();
+  startTimer();
+  startCombos();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (state.paused) return;
+    state.timeLeft--;
+    updateTimer();
+
+    // Warning beeps last 10 sec of work
+    if (state.phase === 'work' && state.timeLeft > 0 && state.timeLeft <= 10) {
+      playTick();
+    }
+
+    if (state.timeLeft <= 0) {
+      onPhaseEnd();
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  $('timer').textContent = fmtTime(state.timeLeft);
+}
+
+function onPhaseEnd() {
+  clearInterval(timerInterval);
+  clearInterval(comboInterval);
+  speechSynthesis.cancel();
+
+  if (state.phase === 'work') {
+    // Round just finished
+    playRoundEnd();
+    if (state.currentRound >= state.rounds) {
+      finishTraining();
+      return;
+    }
+    // Go to rest
+    state.phase = 'rest';
+    state.timeLeft = state.restSec;
+    $('timer').classList.add('rest');
+    $('timer').classList.remove('work');
+    $('phaseLabel').textContent = 'Отдых';
+    $('comboType').textContent = 'Восстановление';
+    $('comboType').className = 'combo-type';
+    $('comboType').style.color = '#4a9eff';
+    $('comboText').textContent = 'Дыши, пей воду';
+    $('comboNumbers').textContent = '';
+    speak('Отдых');
+    updateTimer();
+    startTimer();
+  } else {
+    // Rest just finished, next round
+    state.currentRound++;
+    playRoundStart();
+    speak('Раунд ' + state.currentRound);
+    setTimeout(() => startRound(), 600);
+  }
+}
+
+function startCombos() {
+  // Immediate first combo
+  showRandomCombo();
+  clearInterval(comboInterval);
+  comboInterval = setInterval(() => {
+    if (state.paused) return;
+    if (state.phase !== 'work') return;
+    showRandomCombo();
+  }, state.paceSec * 1000);
+}
+
+function showRandomCombo() {
+  const types = [];
+  if (state.attacks) types.push('attack');
+  if (state.defense) types.push('defense');
+  if (state.footwork) types.push('footwork');
+  if (types.length === 0) return;
+
+  // Weight attacks heavier (they're the bulk of boxing training)
+  const weighted = [];
+  types.forEach(t => {
+    if (t === 'attack') weighted.push(t, t, t, t); // 4x weight
+    else weighted.push(t);
+  });
+  const type = pick(weighted);
+
+  const display = $('comboDisplay');
+  display.classList.remove('show');
+  void display.offsetWidth;
+  display.classList.add('show');
+
+  const typeEl = $('comboType');
+  typeEl.style.color = '';
+  typeEl.className = 'combo-type';
+
+  if (type === 'attack') {
+    const pool = state.level === 'mixed'
+      ? [...COMBOS.beginner, ...COMBOS.medium, ...COMBOS.advanced]
+      : COMBOS[state.level];
+    const combo = pick(pool);
+    typeEl.textContent = 'Удары';
+    typeEl.classList.add('attack');
+    $('comboText').textContent = combo.text;
+    $('comboNumbers').textContent = combo.numbers.join(' — ');
+    speak(combo.text);
+  } else if (type === 'defense') {
+    const move = pick(DEFENSE);
+    typeEl.textContent = 'Защита';
+    typeEl.classList.add('defense');
+    $('comboText').textContent = move;
+    $('comboNumbers').textContent = '';
+    speak(move);
+  } else {
+    const move = pick(FOOTWORK);
+    typeEl.textContent = 'Работа ног';
+    typeEl.classList.add('footwork');
+    $('comboText').textContent = move;
+    $('comboNumbers').textContent = '';
+    speak(move);
+  }
+
+  state.comboCount++;
+}
+
+// ============ CONTROLS ============
+$('pauseBtn').addEventListener('click', () => {
+  state.paused = !state.paused;
+  $('pauseBtn').textContent = state.paused ? 'Продолжить' : 'Пауза';
+  if (state.paused) speechSynthesis.cancel();
+});
+
+$('skipBtn').addEventListener('click', () => {
+  if (state.phase === 'work') showRandomCombo();
+  else onPhaseEnd();
+});
+
+$('stopBtn').addEventListener('click', () => {
+  if (confirm('Закончить тренировку?')) {
+    cleanup();
+    showScreen('setup');
+  }
+});
+
+$('backBtn').addEventListener('click', () => {
+  if (confirm('Выйти из тренировки?')) {
+    cleanup();
+    showScreen('setup');
+  }
+});
+
+function cleanup() {
+  clearInterval(timerInterval);
+  clearInterval(comboInterval);
+  speechSynthesis.cancel();
+  releaseWakeLock();
+}
+
+function finishTraining() {
+  cleanup();
+  const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  $('doneRounds').textContent = state.rounds;
+  $('doneTime').textContent = fmtTime(elapsed);
+  $('doneCombos').textContent = state.comboCount;
+  showScreen('done');
+}
+
+$('restartBtn').addEventListener('click', () => {
+  showScreen('setup');
+});
+
+// ============ WAKE LOCK (keep screen on) ============
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) { console.warn('Wake lock failed:', e); }
+}
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && $('training').classList.contains('active')) {
+    requestWakeLock();
+  }
+});
+
+// Prevent accidental swipe-back / pull-to-refresh
+document.body.addEventListener('touchmove', e => {
+  if (e.target.closest('.screen')) return; // allow scroll
+}, { passive: true });
+
+</script>
+</body>
+</html>
