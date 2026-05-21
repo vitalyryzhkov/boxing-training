@@ -256,8 +256,26 @@
       <input type="range" id="restSlider" min="15" max="120" value="60" step="15">
     </div>
     <div class="slider-row">
-      <div class="top"><span>Темп команд (сек)</span><span class="val" id="paceVal">5</span></div>
-      <input type="range" id="paceSlider" min="3" max="12" value="5" step="1">
+      <div class="top" style="margin-bottom:10px;">
+        <span>Темп команд</span>
+      </div>
+      <div class="order-toggle" id="paceModeToggle" style="margin-bottom:0;">
+        <div class="opt active" data-pacemode="fixed">Фикс</div>
+        <div class="opt" data-pacemode="range">Диапазон</div>
+      </div>
+    </div>
+    <!-- FIXED pace -->
+    <div class="slider-row" id="paceFixedRow">
+      <div class="top"><span>Пауза между командами (сек)</span><span class="val" id="paceVal">5</span></div>
+      <input type="range" id="paceSlider" min="2" max="12" value="5" step="1">
+    </div>
+    <!-- RANGE pace -->
+    <div class="slider-row" id="paceRangeRow" style="display:none;">
+      <div class="top"><span>От (сек)</span><span class="val" id="paceMinVal">2</span></div>
+      <input type="range" id="paceMinSlider" min="1" max="11" value="2" step="1">
+      <div class="top" style="margin-top:12px;"><span>До (сек)</span><span class="val" id="paceMaxVal">7</span></div>
+      <input type="range" id="paceMaxSlider" min="2" max="15" value="7" step="1">
+      <div class="hint" id="paceRangeHint" style="text-align:left;margin-top:8px;">Пауза будет случайной от 2 до 7 сек</div>
     </div>
   </div>
 
@@ -426,6 +444,12 @@ const MOVE_LIBRARY = [
   "Два снизу два прямых",
   "Двойка",
   "Почтальон",
+  "Нырок уклон вправо",
+  "Нырок уклон влево",
+  "Три прямых",
+  "Четыре прямых",
+  "Шесть прямых",
+  "Секретка",
 ];
 
 // ============ STATE ============
@@ -436,6 +460,9 @@ let state = {
   workSec: 180,
   restSec: 60,
   paceSec: 5,
+  paceMode: 'fixed', // 'fixed' | 'range'
+  paceMin: 2,
+  paceMax: 7,
   attacks: true, defense: true, footwork: true, bell: true,
   // manual: per-round config. roundConfigs[i] = { moves: [indices], order: 'sequence'|'random' }
   roundConfigs: [],
@@ -543,6 +570,36 @@ bindSlider('roundsSlider', 'rounds', 'roundsVal');
 bindSlider('workSlider', 'workSec', 'workVal', 60);
 bindSlider('restSlider', 'restSec', 'restVal');
 bindSlider('paceSlider', 'paceSec', 'paceVal');
+
+// Pace mode toggle (fixed / range)
+$('paceModeToggle').addEventListener('click', e => {
+  const opt = e.target.closest('.opt');
+  if (!opt) return;
+  state.paceMode = opt.dataset.pacemode;
+  document.querySelectorAll('#paceModeToggle .opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.pacemode === state.paceMode));
+  $('paceFixedRow').style.display = state.paceMode === 'fixed' ? 'block' : 'none';
+  $('paceRangeRow').style.display = state.paceMode === 'range' ? 'block' : 'none';
+});
+
+// Range sliders — keep min <= max
+function updatePaceRangeHint() {
+  $('paceRangeHint').textContent = `Пауза будет случайной от ${state.paceMin} до ${state.paceMax} сек`;
+}
+$('paceMinSlider').addEventListener('input', () => {
+  let v = parseInt($('paceMinSlider').value);
+  if (v >= state.paceMax) { v = state.paceMax - 1; $('paceMinSlider').value = v; }
+  state.paceMin = v;
+  $('paceMinVal').textContent = v;
+  updatePaceRangeHint();
+});
+$('paceMaxSlider').addEventListener('input', () => {
+  let v = parseInt($('paceMaxSlider').value);
+  if (v <= state.paceMin) { v = state.paceMin + 1; $('paceMaxSlider').value = v; }
+  state.paceMax = v;
+  $('paceMaxVal').textContent = v;
+  updatePaceRangeHint();
+});
 
 document.querySelectorAll('#catGroup .toggle-row, [data-toggle="bell"]').forEach(row => {
   row.addEventListener('click', () => {
@@ -729,7 +786,7 @@ function updateTimer() { $('timer').textContent = fmtTime(state.timeLeft); }
 
 function onPhaseEnd() {
   clearInterval(timerInterval);
-  clearInterval(comboInterval);
+  clearTimeout(comboInterval);
   speechSynthesis.cancel();
 
   if (state.phase === 'work') {
@@ -753,13 +810,32 @@ function onPhaseEnd() {
   }
 }
 
+function nextPaceMs() {
+  if (state.paceMode === 'range') {
+    const lo = state.paceMin, hi = state.paceMax;
+    const sec = lo + Math.random() * (hi - lo);
+    return sec * 1000;
+  }
+  return state.paceSec * 1000;
+}
+
 function startCombos() {
+  clearTimeout(comboInterval);
   showNextCombo();
-  clearInterval(comboInterval);
-  comboInterval = setInterval(() => {
-    if (state.paused || state.phase !== 'work') return;
+  scheduleNextCombo();
+}
+
+function scheduleNextCombo() {
+  clearTimeout(comboInterval);
+  comboInterval = setTimeout(() => {
+    // If paused or not in work phase, just re-check shortly without firing a command
+    if (state.paused || state.phase !== 'work') {
+      scheduleNextCombo();
+      return;
+    }
     showNextCombo();
-  }, state.paceSec * 1000);
+    scheduleNextCombo();
+  }, nextPaceMs());
 }
 
 function flashCombo() {
@@ -843,7 +919,7 @@ $('pauseBtn').addEventListener('click', () => {
   if (state.paused) speechSynthesis.cancel();
 });
 $('skipBtn').addEventListener('click', () => {
-  if (state.phase === 'work') showNextCombo();
+  if (state.phase === 'work') { showNextCombo(); scheduleNextCombo(); }
   else onPhaseEnd();
 });
 $('stopBtn').addEventListener('click', () => {
@@ -853,7 +929,7 @@ $('backBtn').addEventListener('click', () => {
   if (confirm('Выйти из тренировки?')) { cleanup(); showScreen('setup'); }
 });
 function cleanup() {
-  clearInterval(timerInterval); clearInterval(comboInterval);
+  clearInterval(timerInterval); clearTimeout(comboInterval);
   speechSynthesis.cancel(); releaseWakeLock();
 }
 function finishTraining() {
