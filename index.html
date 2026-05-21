@@ -103,11 +103,12 @@
 
   /* MANUAL BUILDER */
   .round-tabs {
-    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px;
+    display: flex; gap: 8px; overflow-x: auto; overflow-y: visible;
+    padding: 8px 2px 10px 2px; margin-bottom: 4px;
   }
   .round-tab {
-    flex-shrink: 0; min-width: 54px; padding: 10px 14px; background: #1a1a1a;
-    border: 1.5px solid #2a2a2a; border-radius: 10px; font-size: 14px; font-weight: 600;
+    flex-shrink: 0; min-width: 56px; padding: 12px 16px; background: #1a1a1a;
+    border: 1.5px solid #2a2a2a; border-radius: 10px; font-size: 16px; font-weight: 700;
     color: #ccc; cursor: pointer; text-align: center; position: relative;
   }
   .round-tab.active { background: #ff4444; border-color: #ff4444; color: #fff; }
@@ -117,6 +118,21 @@
     display: flex; align-items: center; justify-content: center;
   }
   .round-tab.active .cnt { background: #fff; }
+  .round-tab .dot {
+    position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+    width: 6px; height: 6px; border-radius: 50%; background: #4a9eff;
+  }
+  .round-tab.active .dot { background: #fff; }
+
+  .builder-sticky {
+    position: sticky; top: 0; z-index: 10;
+    background: #0a0a0a; padding-top: 4px; margin: 0 -20px; padding-left: 20px; padding-right: 20px;
+    border-bottom: 1px solid #1a1a1a; padding-bottom: 10px; margin-bottom: 14px;
+  }
+  .round-settings-box {
+    background: #141414; border: 1.5px solid #2a2a2a; border-radius: 12px;
+    padding: 12px; margin-bottom: 14px;
+  }
 
   .move-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
   .move-item {
@@ -154,6 +170,11 @@
   .round-info { font-size: 14px; color: #888; font-weight: 600; }
   .round-info b { color: #fff; }
   .back-btn { background: transparent; border: none; color: #888; font-size: 14px; cursor: pointer; padding: 4px 8px; }
+  .done-btn {
+    background: #ff4444; border: none; color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; padding: 9px 20px; border-radius: 10px; transition: transform 0.1s;
+  }
+  .done-btn:active { transform: scale(0.95); }
 
   .timer-section { padding: 24px 20px; text-align: center; border-bottom: 1px solid #1a1a1a; }
   .timer { font-size: 64px; font-weight: 800; letter-spacing: -2px; font-variant-numeric: tabular-nums; line-height: 1; }
@@ -227,7 +248,7 @@
   </div>
 
   <div class="setting-group">
-    <div class="setting-label">Раунды</div>
+    <div class="setting-label">Раунды — общие настройки</div>
     <div class="slider-row">
       <div class="top"><span>Количество раундов</span><span class="val" id="roundsVal">3</span></div>
       <input type="range" id="roundsSlider" min="1" max="12" value="3">
@@ -284,15 +305,57 @@
 
 <!-- ============ BUILDER SCREEN ============ -->
 <div class="screen" id="builder">
-  <div class="training-header" style="padding: 0 0 16px 0; border-bottom:1px solid #1a1a1a; margin-bottom:16px;">
-    <button class="back-btn" id="builderBackBtn">← Готово</button>
-    <div class="round-info">Конструктор</div>
-    <div style="width:60px;"></div>
+  <div class="builder-sticky">
+    <div class="training-header" style="padding: 0 0 12px 0;">
+      <div class="round-info" style="font-size:16px;">Конструктор</div>
+      <button class="done-btn" id="builderBackBtn">Готово ✓</button>
+    </div>
+    <div class="setting-label" style="margin-bottom:8px;">Выбери раунд для настройки</div>
+    <div class="round-tabs" id="roundTabs"></div>
   </div>
 
-  <div class="round-tabs" id="roundTabs"></div>
+  <div id="editingRoundLabel" style="font-size:17px;font-weight:700;color:#ff4444;margin-bottom:14px;">Раунд 1</div>
 
-  <div class="setting-label">Порядок в этом раунде</div>
+  <!-- Per-round override toggle -->
+  <div class="toggle-row" data-toggle="custom" style="margin-bottom:0;">
+    <div>
+      <div class="label">Свои настройки раунда</div>
+      <div class="sub">Иначе берутся общие с главного экрана</div>
+    </div>
+    <div class="toggle" id="t-custom"></div>
+  </div>
+
+  <!-- Per-round settings (hidden unless custom is on) -->
+  <div id="roundSettings" style="display:none;" class="round-settings-box">
+    <div class="slider-row">
+      <div class="top"><span>Длина раунда (мин)</span><span class="val" id="rWorkVal">3</span></div>
+      <input type="range" id="rWorkSlider" min="1" max="5" value="3" step="1">
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Отдых после (сек)</span><span class="val" id="rRestVal">60</span></div>
+      <input type="range" id="rRestSlider" min="15" max="120" value="60" step="15">
+    </div>
+    <div class="slider-row">
+      <div class="top" style="margin-bottom:10px;"><span>Темп команд</span></div>
+      <div class="order-toggle" id="rPaceModeToggle" style="margin-bottom:0;">
+        <div class="opt active" data-rpacemode="fixed">Фикс</div>
+        <div class="opt" data-rpacemode="range">Диапазон</div>
+      </div>
+    </div>
+    <div class="slider-row" id="rPaceFixedRow">
+      <div class="top"><span>Пауза (сек)</span><span class="val" id="rPaceVal">5</span></div>
+      <input type="range" id="rPaceSlider" min="2" max="12" value="5" step="1">
+    </div>
+    <div class="slider-row" id="rPaceRangeRow" style="display:none;">
+      <div class="top"><span>От (сек)</span><span class="val" id="rPaceMinVal">2</span></div>
+      <input type="range" id="rPaceMinSlider" min="1" max="11" value="2" step="1">
+      <div class="top" style="margin-top:12px;"><span>До (сек)</span><span class="val" id="rPaceMaxVal">7</span></div>
+      <input type="range" id="rPaceMaxSlider" min="2" max="15" value="7" step="1">
+      <div class="hint" id="rPaceRangeHint" style="text-align:left;margin-top:8px;">Пауза будет случайной от 2 до 7 сек</div>
+    </div>
+  </div>
+
+  <div class="setting-label" style="margin-top:14px;">Порядок в этом раунде</div>
   <div class="order-toggle" id="orderToggle">
     <div class="opt" data-order="sequence">По порядку</div>
     <div class="opt active" data-order="random">Случайно</div>
@@ -515,11 +578,34 @@ document.querySelectorAll('[data-toggle="bell"]').forEach(row => {
 });
 
 // ============ MANUAL BUILDER ============
+function defaultRoundConfig() {
+  return {
+    moves: [],
+    order: 'random',
+    custom: false,        // использовать ли свои настройки
+    workSec: 180,
+    restSec: 60,
+    paceMode: 'fixed',
+    paceSec: 5,
+    paceMin: 2,
+    paceMax: 7,
+  };
+}
 function ensureRoundConfigs() {
   while (state.roundConfigs.length < state.rounds) {
-    state.roundConfigs.push({ moves: [], order: 'random' });
+    state.roundConfigs.push(defaultRoundConfig());
   }
   state.roundConfigs.length = state.rounds;
+  // Бэкап-совместимость: дополнить отсутствующие поля
+  state.roundConfigs.forEach(c => {
+    if (c.custom === undefined) c.custom = false;
+    if (c.workSec === undefined) c.workSec = 180;
+    if (c.restSec === undefined) c.restSec = 60;
+    if (c.paceMode === undefined) c.paceMode = 'fixed';
+    if (c.paceSec === undefined) c.paceSec = 5;
+    if (c.paceMin === undefined) c.paceMin = 2;
+    if (c.paceMax === undefined) c.paceMax = 7;
+  });
 }
 function updateManualSummary() {
   const filled = state.roundConfigs.filter(c => c.moves.length > 0).length;
@@ -536,6 +622,7 @@ $('openBuilderBtn').addEventListener('click', () => {
   renderRoundTabs();
   renderMoveList();
   renderOrderToggle();
+  renderRoundSettings();
   showScreen('builder');
 });
 $('builderBackBtn').addEventListener('click', () => {
@@ -557,9 +644,14 @@ function renderRoundTabs() {
       badge.textContent = cnt;
       tab.appendChild(badge);
     }
+    if (state.roundConfigs[i].custom) {
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      tab.appendChild(dot);
+    }
     tab.addEventListener('click', () => {
       editingRound = i;
-      renderRoundTabs(); renderMoveList(); renderOrderToggle();
+      renderRoundTabs(); renderMoveList(); renderOrderToggle(); renderRoundSettings();
     });
     tabs.appendChild(tab);
   }
@@ -598,6 +690,87 @@ $('orderToggle').addEventListener('click', e => {
   renderOrderToggle();
 });
 
+// ---- Per-round custom settings ----
+function renderRoundSettings() {
+  const c = state.roundConfigs[editingRound];
+  $('editingRoundLabel').textContent = 'Раунд ' + (editingRound + 1);
+  // custom toggle
+  $('t-custom').classList.toggle('on', c.custom);
+  $('roundSettings').style.display = c.custom ? 'block' : 'none';
+  // values
+  $('rWorkSlider').value = Math.round(c.workSec / 60);
+  $('rWorkVal').textContent = Math.round(c.workSec / 60);
+  $('rRestSlider').value = c.restSec;
+  $('rRestVal').textContent = c.restSec;
+  // pace mode
+  document.querySelectorAll('#rPaceModeToggle .opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.rpacemode === c.paceMode));
+  $('rPaceFixedRow').style.display = c.paceMode === 'fixed' ? 'block' : 'none';
+  $('rPaceRangeRow').style.display = c.paceMode === 'range' ? 'block' : 'none';
+  $('rPaceSlider').value = c.paceSec;
+  $('rPaceVal').textContent = c.paceSec;
+  $('rPaceMinSlider').value = c.paceMin;
+  $('rPaceMinVal').textContent = c.paceMin;
+  $('rPaceMaxSlider').value = c.paceMax;
+  $('rPaceMaxVal').textContent = c.paceMax;
+  $('rPaceRangeHint').textContent = `Пауза будет случайной от ${c.paceMin} до ${c.paceMax} сек`;
+}
+
+$('t-custom').parentElement.addEventListener('click', () => {
+  const c = state.roundConfigs[editingRound];
+  c.custom = !c.custom;
+  // При первом включении подставляем текущие общие настройки как старт
+  if (c.custom && !c._initialized) {
+    c.workSec = state.workSec;
+    c.restSec = state.restSec;
+    c.paceMode = state.paceMode;
+    c.paceSec = state.paceSec;
+    c.paceMin = state.paceMin;
+    c.paceMax = state.paceMax;
+    c._initialized = true;
+  }
+  renderRoundSettings();
+  renderRoundTabs();
+});
+
+$('rWorkSlider').addEventListener('input', () => {
+  const v = parseInt($('rWorkSlider').value);
+  state.roundConfigs[editingRound].workSec = v * 60;
+  $('rWorkVal').textContent = v;
+});
+$('rRestSlider').addEventListener('input', () => {
+  const v = parseInt($('rRestSlider').value);
+  state.roundConfigs[editingRound].restSec = v;
+  $('rRestVal').textContent = v;
+});
+$('rPaceModeToggle').addEventListener('click', e => {
+  const opt = e.target.closest('.opt');
+  if (!opt) return;
+  state.roundConfigs[editingRound].paceMode = opt.dataset.rpacemode;
+  renderRoundSettings();
+});
+$('rPaceSlider').addEventListener('input', () => {
+  const v = parseInt($('rPaceSlider').value);
+  state.roundConfigs[editingRound].paceSec = v;
+  $('rPaceVal').textContent = v;
+});
+$('rPaceMinSlider').addEventListener('input', () => {
+  const c = state.roundConfigs[editingRound];
+  let v = parseInt($('rPaceMinSlider').value);
+  if (v >= c.paceMax) { v = c.paceMax - 1; $('rPaceMinSlider').value = v; }
+  c.paceMin = v;
+  $('rPaceMinVal').textContent = v;
+  $('rPaceRangeHint').textContent = `Пауза будет случайной от ${c.paceMin} до ${c.paceMax} сек`;
+});
+$('rPaceMaxSlider').addEventListener('input', () => {
+  const c = state.roundConfigs[editingRound];
+  let v = parseInt($('rPaceMaxSlider').value);
+  if (v <= c.paceMin) { v = c.paceMin + 1; $('rPaceMaxSlider').value = v; }
+  c.paceMax = v;
+  $('rPaceMaxVal').textContent = v;
+  $('rPaceRangeHint').textContent = `Пауза будет случайной от ${c.paceMin} до ${c.paceMax} сек`;
+});
+
 $('selectAllBtn').addEventListener('click', () => {
   state.roundConfigs[editingRound].moves = MOVE_LIBRARY.map((_, i) => i);
   renderMoveList(); renderRoundTabs();
@@ -609,7 +782,18 @@ $('clearBtn').addEventListener('click', () => {
 $('copyAllBtn').addEventListener('click', () => {
   const src = state.roundConfigs[editingRound];
   for (let i = 0; i < state.rounds; i++) {
-    state.roundConfigs[i] = { moves: [...src.moves], order: src.order };
+    if (i === editingRound) continue;
+    state.roundConfigs[i] = {
+      moves: [...src.moves],
+      order: src.order,
+      custom: src.custom,
+      workSec: src.workSec,
+      restSec: src.restSec,
+      paceMode: src.paceMode,
+      paceSec: src.paceSec,
+      paceMin: src.paceMin,
+      paceMax: src.paceMax,
+    };
   }
   renderRoundTabs();
   alert('Скопировано на все раунды');
@@ -657,10 +841,28 @@ async function countdownStart() {
   overlay.classList.remove('show');
 }
 
+// Эффективные настройки раунда: свои (если custom) или общие с главного экрана
+function getRoundSettings(roundNum) {
+  const c = state.roundConfigs[roundNum - 1];
+  if (c && c.custom) {
+    return {
+      workSec: c.workSec, restSec: c.restSec,
+      paceMode: c.paceMode, paceSec: c.paceSec,
+      paceMin: c.paceMin, paceMax: c.paceMax,
+    };
+  }
+  return {
+    workSec: state.workSec, restSec: state.restSec,
+    paceMode: state.paceMode, paceSec: state.paceSec,
+    paceMin: state.paceMin, paceMax: state.paceMax,
+  };
+}
+
 function startRound() {
   $('roundNum').textContent = state.currentRound;
   state.phase = 'work';
-  state.timeLeft = state.workSec;
+  const rs = getRoundSettings(state.currentRound);
+  state.timeLeft = rs.workSec;
   state.seqPointer = 0;
   $('timer').classList.remove('rest'); $('timer').classList.add('work');
   $('phaseLabel').textContent = 'Работа';
@@ -690,7 +892,7 @@ function onPhaseEnd() {
     playRoundEnd();
     if (state.currentRound >= state.rounds) { finishTraining(); return; }
     state.phase = 'rest';
-    state.timeLeft = state.restSec;
+    state.timeLeft = getRoundSettings(state.currentRound).restSec;
     $('timer').classList.add('rest'); $('timer').classList.remove('work');
     $('phaseLabel').textContent = 'Отдых';
     $('comboType').textContent = 'Восстановление';
@@ -708,12 +910,12 @@ function onPhaseEnd() {
 }
 
 function nextPaceMs() {
-  if (state.paceMode === 'range') {
-    const lo = state.paceMin, hi = state.paceMax;
-    const sec = lo + Math.random() * (hi - lo);
+  const rs = getRoundSettings(state.currentRound);
+  if (rs.paceMode === 'range') {
+    const sec = rs.paceMin + Math.random() * (rs.paceMax - rs.paceMin);
     return sec * 1000;
   }
-  return state.paceSec * 1000;
+  return rs.paceSec * 1000;
 }
 
 function startCombos() {
