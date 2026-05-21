@@ -224,23 +224,6 @@
     <p>Тренировка с голосовыми командами</p>
   </div>
 
-  <div class="setting-label">Режим</div>
-  <div class="mode-grid" id="modeOpts">
-    <button class="option-btn active" data-mode="auto">Авто</button>
-    <button class="option-btn" data-mode="manual">Свои комбинации</button>
-  </div>
-
-  <!-- AUTO-only: level -->
-  <div class="setting-group" id="levelGroup">
-    <div class="setting-label">Уровень</div>
-    <div class="option-grid" id="levelOpts">
-      <button class="option-btn active" data-level="beginner">Новичок</button>
-      <button class="option-btn" data-level="medium">Средний</button>
-      <button class="option-btn" data-level="advanced">Продвинутый</button>
-      <button class="option-btn" data-level="mixed">Все уровни</button>
-    </div>
-  </div>
-
   <div class="setting-group">
     <div class="setting-label">Раунды</div>
     <div class="slider-row">
@@ -279,25 +262,8 @@
     </div>
   </div>
 
-  <!-- AUTO-only: categories -->
-  <div class="setting-group" id="catGroup">
-    <div class="setting-label">Включить в тренировку</div>
-    <div class="toggle-row" data-toggle="attacks">
-      <div><div class="label">Ударные комбинации</div><div class="sub">Раз, два, три...</div></div>
-      <div class="toggle on" id="t-attacks"></div>
-    </div>
-    <div class="toggle-row" data-toggle="defense">
-      <div><div class="label">Защитные действия</div><div class="sub">Уклоны, нырки, блоки</div></div>
-      <div class="toggle on" id="t-defense"></div>
-    </div>
-    <div class="toggle-row" data-toggle="footwork">
-      <div><div class="label">Работа ног</div><div class="sub">Шаги, развороты</div></div>
-      <div class="toggle on" id="t-footwork"></div>
-    </div>
-  </div>
-
-  <!-- MANUAL-only: open builder button -->
-  <div class="setting-group" id="manualGroup" style="display:none;">
+  <!-- MANUAL builder -->
+  <div class="setting-group" id="manualGroup">
     <div class="setting-label">Свои комбинации</div>
     <button class="ghost-btn" id="openBuilderBtn" style="margin-top:0;">Настроить комбинации по раундам →</button>
     <div class="hint" id="manualSummary">Раунды пока не заполнены</div>
@@ -382,44 +348,6 @@
 </div>
 
 <script>
-// ============ AUTO MODE DATA ============
-const COMBOS = {
-  beginner: [
-    { numbers: [1], text: "Раз" },
-    { numbers: [2], text: "Два" },
-    { numbers: [1, 1], text: "Раз, раз" },
-    { numbers: [1, 2], text: "Раз, два" },
-    { numbers: [2, 1], text: "Два, раз" },
-    { numbers: [1, 2, 1], text: "Раз, два, раз" },
-    { numbers: [1, 1, 2], text: "Раз, раз, два" },
-    { numbers: [1, 2, 3], text: "Раз, два, три" },
-  ],
-  medium: [
-    { numbers: [1, 2, 3, 2], text: "Раз, два, три, два" },
-    { numbers: [1, 2, 5, 2], text: "Раз, два, пять, два" },
-    { numbers: [1, 1, 2, 3], text: "Раз, раз, два, три" },
-    { numbers: [2, 3, 2], text: "Два, три, два" },
-    { numbers: [1, 6, 3, 2], text: "Раз, шесть, три, два" },
-    { numbers: [1, 2, 5, 4], text: "Раз, два, пять, четыре" },
-    { numbers: [3, 2, 3, 2], text: "Три, два, три, два" },
-    { numbers: [1, 2, 3, 4], text: "Раз, два, три, четыре" },
-    { numbers: [1, 2, 1, 2], text: "Раз, два, раз, два" },
-    { numbers: [2, 1, 2, 3], text: "Два, раз, два, три" },
-  ],
-  advanced: [
-    { numbers: [1, 2, 5, 2, 3], text: "Раз, два, пять, два, три" },
-    { numbers: [1, 1, 2, 5, 2], text: "Раз, раз, два, пять, два" },
-    { numbers: [1, 2, 3, 4, 3, 2], text: "Раз, два, три, четыре, три, два" },
-    { numbers: [1, 6, 3, 2, 5, 2], text: "Раз, шесть, три, два, пять, два" },
-    { numbers: [2, 3, 2, 5, 2], text: "Два, три, два, пять, два" },
-    { numbers: [1, 2, 1, 6, 3, 2], text: "Раз, два, раз, шесть, три, два" },
-    { numbers: [1, 1, 2, 3, 4, 2], text: "Раз, раз, два, три, четыре, два" },
-    { numbers: [3, 2, 5, 4, 3, 2], text: "Три, два, пять, четыре, три, два" },
-    { numbers: [1, 2, 5, 2, 3, 2, 5], text: "Раз, два, пять, два, три, два, пять" },
-  ],
-};
-const DEFENSE = ["Уклон влево","Уклон вправо","Нырок","Двойной нырок","Блок двойки","Подставка","Сайдстеп","Отбив"];
-const FOOTWORK = ["Шаг вперёд, двойка","Шаг назад, джеб","Сайдстеп влево","Сайдстеп вправо","Разрыв дистанции","Челнок","Разворот на левой","Выход с двойкой"];
 
 // ============ MANUAL MODE: user's move library ============
 const MOVE_LIBRARY = [
@@ -454,8 +382,6 @@ const MOVE_LIBRARY = [
 
 // ============ STATE ============
 let state = {
-  trainMode: 'auto', // 'auto' | 'manual'
-  level: 'beginner',
   rounds: 3,
   workSec: 180,
   restSec: 60,
@@ -463,8 +389,8 @@ let state = {
   paceMode: 'fixed', // 'fixed' | 'range'
   paceMin: 2,
   paceMax: 7,
-  attacks: true, defense: true, footwork: true, bell: true,
-  // manual: per-round config. roundConfigs[i] = { moves: [indices], order: 'sequence'|'random' }
+  bell: true,
+  // per-round config. roundConfigs[i] = { moves: [indices], order: 'sequence'|'random' }
   roundConfigs: [],
   // runtime
   currentRound: 1, phase: 'work', timeLeft: 0, paused: false,
@@ -532,31 +458,7 @@ function playRoundEnd() {
 }
 function playTick() { playBell(1200, 0.1); }
 
-// ============ MODE SWITCHING ============
-$('modeOpts').addEventListener('click', e => {
-  const btn = e.target.closest('.option-btn');
-  if (!btn) return;
-  document.querySelectorAll('#modeOpts .option-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  state.trainMode = btn.dataset.mode;
-  applyMode();
-});
-function applyMode() {
-  const isManual = state.trainMode === 'manual';
-  $('levelGroup').style.display = isManual ? 'none' : 'block';
-  $('catGroup').style.display = isManual ? 'none' : 'block';
-  $('manualGroup').style.display = isManual ? 'block' : 'none';
-  if (isManual) { ensureRoundConfigs(); updateManualSummary(); }
-}
-
 // ============ SETUP UI ============
-$('levelOpts').addEventListener('click', e => {
-  const btn = e.target.closest('.option-btn');
-  if (!btn) return;
-  document.querySelectorAll('#levelOpts .option-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  state.level = btn.dataset.level;
-});
 function bindSlider(id, prop, valId, multiplier = 1) {
   const s = $(id), v = $(valId);
   s.addEventListener('input', () => {
@@ -601,7 +503,7 @@ $('paceMaxSlider').addEventListener('input', () => {
   updatePaceRangeHint();
 });
 
-document.querySelectorAll('#catGroup .toggle-row, [data-toggle="bell"]').forEach(row => {
+document.querySelectorAll('[data-toggle="bell"]').forEach(row => {
   row.addEventListener('click', () => {
     const key = row.dataset.toggle;
     const t = row.querySelector('.toggle');
@@ -713,18 +615,11 @@ $('copyAllBtn').addEventListener('click', () => {
 
 // ============ START ============
 $('startBtn').addEventListener('click', async () => {
-  if (state.trainMode === 'auto') {
-    if (!state.attacks && !state.defense && !state.footwork) {
-      alert('Выбери хотя бы один тип упражнений!');
-      return;
-    }
-  } else {
-    ensureRoundConfigs();
-    const anyFilled = state.roundConfigs.some(c => c.moves.length > 0);
-    if (!anyFilled) {
-      alert('Заполни хотя бы один раунд комбинациями!');
-      return;
-    }
+  ensureRoundConfigs();
+  const anyFilled = state.roundConfigs.some(c => c.moves.length > 0);
+  if (!anyFilled) {
+    alert('Заполни хотя бы один раунд комбинациями!');
+    return;
   }
 
   try { getCtx(); } catch(e) {}
@@ -844,8 +739,7 @@ function flashCombo() {
 }
 
 function showNextCombo() {
-  if (state.trainMode === 'manual') showManualMove();
-  else showAutoCombo();
+  showManualMove();
   state.comboCount++;
 }
 
@@ -874,42 +768,6 @@ function showManualMove() {
   $('comboText').textContent = move;
   $('comboNumbers').textContent = '';
   speak(move);
-}
-
-function showAutoCombo() {
-  const types = [];
-  if (state.attacks) types.push('attack');
-  if (state.defense) types.push('defense');
-  if (state.footwork) types.push('footwork');
-  if (types.length === 0) return;
-  const weighted = [];
-  types.forEach(t => { if (t === 'attack') weighted.push(t,t,t,t); else weighted.push(t); });
-  const type = pick(weighted);
-
-  flashCombo();
-  const typeEl = $('comboType');
-  typeEl.style.color = ''; typeEl.className = 'combo-type';
-
-  if (type === 'attack') {
-    const pool = state.level === 'mixed'
-      ? [...COMBOS.beginner, ...COMBOS.medium, ...COMBOS.advanced]
-      : COMBOS[state.level];
-    const combo = pick(pool);
-    typeEl.textContent = 'Удары'; typeEl.classList.add('attack');
-    $('comboText').textContent = combo.text;
-    $('comboNumbers').textContent = combo.numbers.join(' — ');
-    speak(combo.text);
-  } else if (type === 'defense') {
-    const move = pick(DEFENSE);
-    typeEl.textContent = 'Защита'; typeEl.classList.add('defense');
-    $('comboText').textContent = move; $('comboNumbers').textContent = '';
-    speak(move);
-  } else {
-    const move = pick(FOOTWORK);
-    typeEl.textContent = 'Работа ног'; typeEl.classList.add('footwork');
-    $('comboText').textContent = move; $('comboNumbers').textContent = '';
-    speak(move);
-  }
 }
 
 // ============ CONTROLS ============
@@ -951,6 +809,10 @@ function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && $('training').classList.contains('active')) requestWakeLock();
 });
+
+// ============ INIT ============
+ensureRoundConfigs();
+updateManualSummary();
 </script>
 </body>
 </html>
