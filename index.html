@@ -101,6 +101,13 @@
   }
   .ghost-btn:active { background: #1a1a1a; }
 
+  .builder-open-btn {
+    background: #ff4444; color: #fff; border: none;
+    padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700;
+    cursor: pointer; width: 100%; margin-top: 0; transition: transform 0.1s;
+  }
+  .builder-open-btn:active { transform: scale(0.98); }
+
   /* MANUAL BUILDER */
   .round-tabs {
     display: flex; gap: 8px; overflow-x: auto; overflow-y: visible;
@@ -288,7 +295,7 @@
   <!-- MANUAL builder -->
   <div class="setting-group" id="manualGroup">
     <div class="setting-label">Свои комбинации</div>
-    <button class="ghost-btn" id="openBuilderBtn" style="margin-top:0;">Настроить комбинации по раундам →</button>
+    <button class="builder-open-btn" id="openBuilderBtn">Настроить комбинации по раундам →</button>
     <div class="hint" id="manualSummary">Раунды пока не заполнены</div>
   </div>
 
