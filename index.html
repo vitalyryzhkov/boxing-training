@@ -423,35 +423,50 @@
 
 // ============ MANUAL MODE: user's move library ============
 const MOVE_LIBRARY = [
-  "Уклон",
-  "Забегание вправо",
-  "Забегание влево",
-  "Джеб",
-  "Кросс",
-  "Левый хук",
-  "Правый хук",
-  "Левый снизу",
-  "Правый снизу",
-  "Нырок",
-  "Сайд степ влево",
-  "Сайд степ вправо",
+  "В",
+  "Восемь прямых восемь снизу",
+  "Восемь прямых два снизу",
+  "Восемь прямых четыре снизу",
+  "Восемь снизу восемь прямых",
   "Два прямых два снизу",
-  "Два прямых четыре снизу",
-  "Два прямых шесть снизу",
   "Два прямых два снизу два прямых",
   "Два прямых два снизу четыре прямых",
-  "Два снизу четыре прямых",
+  "Два прямых четыре снизу",
+  "Два прямых шесть снизу",
   "Два снизу два прямых",
+  "Два снизу четыре прямых",
   "Двойка",
-  "Почтальон",
-  "Нырок уклон вправо",
-  "Нырок уклон влево",
-  "Три прямых",
-  "Четыре прямых",
-  "Шесть прямых",
-  "Секретка",
-  "В",
+  "Джеб",
+  "Забегание влево",
+  "Забегание вправо",
+  "Кросс",
   "Л",
+  "Левый снизу",
+  "Левый хук",
+  "Нырок",
+  "Нырок уклон влево",
+  "Нырок уклон вправо",
+  "Почтальон",
+  "Правый снизу",
+  "Правый хук",
+  "Сайд степ влево",
+  "Сайд степ вправо",
+  "Секретка",
+  "Три прямых",
+  "Уклон",
+  "Четыре прямых",
+  "Четыре прямых восемь снизу",
+  "Четыре прямых два снизу",
+  "Четыре прямых четыре снизу",
+  "Четыре прямых шесть снизу",
+  "Четыре снизу восемь прямых",
+  "Четыре снизу два прямых",
+  "Четыре снизу четыре прямых",
+  "Четыре снизу шесть прямых",
+  "Шесть прямых",
+  "Шесть прямых два снизу",
+  "Шесть прямых четыре снизу",
+  "Шесть прямых шесть снизу",
 ];
 
 // ============ STATE ============
@@ -464,7 +479,7 @@ let state = {
   paceMin: 2,
   paceMax: 7,
   bell: true,
-  // per-round config. roundConfigs[i] = { moves: [indices], order: 'sequence'|'random' }
+  // per-round config. roundConfigs[i] = { moves: [названия], order: 'sequence'|'random' }
   roundConfigs: [],
   // runtime
   currentRound: 1, phase: 'work', timeLeft: 0, paused: false,
@@ -614,6 +629,15 @@ function ensureRoundConfigs() {
     if (c.paceSec === undefined) c.paceSec = 5;
     if (c.paceMin === undefined) c.paceMin = 2;
     if (c.paceMax === undefined) c.paceMax = 7;
+    // moves хранятся как названия. Отфильтровываем те, которых больше нет в библиотеке
+    // (и заодно мигрируем старый формат, если вдруг там были числовые индексы)
+    if (Array.isArray(c.moves)) {
+      c.moves = c.moves
+        .map(m => typeof m === 'number' ? MOVE_LIBRARY[m] : m)
+        .filter(m => MOVE_LIBRARY.includes(m));
+    } else {
+      c.moves = [];
+    }
   });
 }
 function updateManualSummary() {
@@ -670,15 +694,15 @@ function renderMoveList() {
   const list = $('moveList');
   list.innerHTML = '';
   const selected = state.roundConfigs[editingRound].moves;
-  MOVE_LIBRARY.forEach((move, idx) => {
+  MOVE_LIBRARY.forEach((move) => {
     const item = document.createElement('div');
-    const isSel = selected.includes(idx);
+    const isSel = selected.includes(move);
     item.className = 'move-item' + (isSel ? ' selected' : '');
     item.innerHTML = `<span class="mtext">${move}</span><span class="check">${isSel ? '✓' : ''}</span>`;
     item.addEventListener('click', () => {
       const arr = state.roundConfigs[editingRound].moves;
-      const pos = arr.indexOf(idx);
-      if (pos === -1) arr.push(idx);
+      const pos = arr.indexOf(move);
+      if (pos === -1) arr.push(move);
       else arr.splice(pos, 1);
       renderMoveList(); renderRoundTabs();
     });
@@ -781,7 +805,7 @@ $('rPaceMaxSlider').addEventListener('input', () => {
 });
 
 $('selectAllBtn').addEventListener('click', () => {
-  state.roundConfigs[editingRound].moves = MOVE_LIBRARY.map((_, i) => i);
+  state.roundConfigs[editingRound].moves = [...MOVE_LIBRARY];
   renderMoveList(); renderRoundTabs();
 });
 $('clearBtn').addEventListener('click', () => {
@@ -966,14 +990,13 @@ function showManualMove() {
     $('comboNumbers').textContent = '';
     return;
   }
-  let idx;
+  let move;
   if (cfg.order === 'random') {
-    idx = pick(cfg.moves);
+    move = pick(cfg.moves);
   } else {
-    idx = cfg.moves[state.seqPointer % cfg.moves.length];
+    move = cfg.moves[state.seqPointer % cfg.moves.length];
     state.seqPointer++;
   }
-  const move = MOVE_LIBRARY[idx];
   flashCombo();
   $('comboType').textContent = 'Команда';
   $('comboType').className = 'combo-type attack';
