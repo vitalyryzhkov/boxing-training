@@ -51,7 +51,7 @@
     text-align: center;
   }
   .option-btn:active { transform: scale(0.97); }
-  .option-btn.active { background: #ff4444; border-color: #ff4444; color: #fff; }
+  .option-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
 
   .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 22px; }
 
@@ -69,26 +69,26 @@
     content: ''; position: absolute; top: 3px; left: 3px;
     width: 22px; height: 22px; background: #fff; border-radius: 50%; transition: transform 0.2s;
   }
-  .toggle.on { background: #ff4444; }
+  .toggle.on { background: #3b82f6; }
   .toggle.on::after { transform: translateX(22px); }
 
   .slider-row { background: #1a1a1a; padding: 14px 16px; border-radius: 12px; margin-bottom: 8px; }
   .slider-row .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .slider-row .val { font-size: 18px; font-weight: 700; color: #ff4444; }
+  .slider-row .val { font-size: 18px; font-weight: 700; color: #3b82f6; }
   input[type="range"] {
     width: 100%; -webkit-appearance: none; appearance: none;
     height: 6px; background: #2a2a2a; border-radius: 3px; outline: none;
   }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
-    width: 22px; height: 22px; background: #ff4444; border-radius: 50%; cursor: pointer;
+    width: 22px; height: 22px; background: #3b82f6; border-radius: 50%; cursor: pointer;
   }
   input[type="range"]::-moz-range-thumb {
-    width: 22px; height: 22px; background: #ff4444; border-radius: 50%; cursor: pointer; border: none;
+    width: 22px; height: 22px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: none;
   }
 
   .start-btn {
-    background: #ff4444; color: #fff; border: none; padding: 18px; border-radius: 14px;
+    background: #3b82f6; color: #fff; border: none; padding: 18px; border-radius: 14px;
     font-size: 18px; font-weight: 700; cursor: pointer; margin-top: auto;
     text-transform: uppercase; letter-spacing: 1px; transition: transform 0.1s;
   }
@@ -102,7 +102,7 @@
   .ghost-btn:active { background: #1a1a1a; }
 
   .builder-open-btn {
-    background: #ff4444; color: #fff; border: none;
+    background: #3b82f6; color: #fff; border: none;
     padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700;
     cursor: pointer; width: 100%; margin-top: 0; transition: transform 0.1s;
   }
@@ -118,7 +118,7 @@
     border: 1.5px solid #2a2a2a; border-radius: 10px; font-size: 16px; font-weight: 700;
     color: #ccc; cursor: pointer; text-align: center; position: relative;
   }
-  .round-tab.active { background: #ff4444; border-color: #ff4444; color: #fff; }
+  .round-tab.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
   .round-tab .cnt {
     position: absolute; top: -6px; right: -6px; background: #4ade80; color: #000;
     font-size: 10px; font-weight: 800; width: 18px; height: 18px; border-radius: 50%;
@@ -127,7 +127,7 @@
   .round-tab.active .cnt { background: #fff; }
   .round-tab .dot {
     position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-    width: 6px; height: 6px; border-radius: 50%; background: #4a9eff;
+    width: 6px; height: 6px; border-radius: 50%; background: #22d3ee;
   }
   .round-tab.active .dot { background: #fff; }
 
@@ -148,14 +148,14 @@
     border: 1.5px solid #2a2a2a; cursor: pointer; transition: all 0.12s;
   }
   .move-item:active { transform: scale(0.99); }
-  .move-item.selected { background: #2a1518; border-color: #ff4444; }
+  .move-item.selected { background: #15233a; border-color: #3b82f6; }
   .move-item .mtext { font-size: 15px; font-weight: 500; }
   .move-item .check {
     width: 24px; height: 24px; border-radius: 6px; border: 2px solid #444;
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     font-size: 14px; color: #fff; transition: all 0.12s;
   }
-  .move-item.selected .check { background: #ff4444; border-color: #ff4444; }
+  .move-item.selected .check { background: #3b82f6; border-color: #3b82f6; }
 
   .builder-actions { display: flex; gap: 8px; margin-bottom: 8px; }
   .builder-actions .ghost-btn { margin-top: 0; }
@@ -166,7 +166,7 @@
     border-radius: 10px; font-size: 13px; font-weight: 600; color: #ccc;
     text-align: center; cursor: pointer;
   }
-  .order-toggle .opt.active { background: #ff4444; border-color: #ff4444; color: #fff; }
+  .order-toggle .opt.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
 
   /* TRAINING SCREEN */
   #training { padding: 0; }
@@ -178,14 +178,14 @@
   .round-info b { color: #fff; }
   .back-btn { background: transparent; border: none; color: #888; font-size: 14px; cursor: pointer; padding: 4px 8px; }
   .done-btn {
-    background: #ff4444; border: none; color: #fff; font-size: 15px; font-weight: 700;
+    background: #3b82f6; border: none; color: #fff; font-size: 15px; font-weight: 700;
     cursor: pointer; padding: 9px 20px; border-radius: 10px; transition: transform 0.1s;
   }
   .done-btn:active { transform: scale(0.95); }
 
   .timer-section { padding: 24px 20px; text-align: center; border-bottom: 1px solid #1a1a1a; }
   .timer { font-size: 64px; font-weight: 800; letter-spacing: -2px; font-variant-numeric: tabular-nums; line-height: 1; }
-  .timer.rest { color: #4a9eff; }
+  .timer.rest { color: #22d3ee; }
   .timer.work { color: #fff; }
   .phase-label { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #888; margin-top: 6px; font-weight: 600; }
 
@@ -197,11 +197,11 @@
     font-size: 12px; text-transform: uppercase; letter-spacing: 2px;
     color: #888; margin-bottom: 12px; font-weight: 600;
   }
-  .combo-type.attack { color: #ff4444; }
-  .combo-type.defense { color: #4a9eff; }
+  .combo-type.attack { color: #3b82f6; }
+  .combo-type.defense { color: #22d3ee; }
   .combo-type.footwork { color: #4ade80; }
   .combo-text { font-size: 36px; font-weight: 800; line-height: 1.2; word-break: break-word; letter-spacing: -1px; }
-  .combo-numbers { font-size: 52px; font-weight: 900; color: #ff4444; margin-top: 12px; letter-spacing: 4px; }
+  .combo-numbers { font-size: 52px; font-weight: 900; color: #3b82f6; margin-top: 12px; letter-spacing: 4px; }
 
   .controls { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid #1a1a1a; }
   .control-btn {
@@ -210,8 +210,8 @@
     cursor: pointer; transition: transform 0.1s;
   }
   .control-btn:active { transform: scale(0.96); }
-  .control-btn.primary { background: #ff4444; border-color: #ff4444; }
-  .control-btn.danger { background: transparent; color: #ff4444; border-color: #ff4444; }
+  .control-btn.primary { background: #3b82f6; border-color: #3b82f6; }
+  .control-btn.danger { background: transparent; color: #3b82f6; border-color: #3b82f6; }
 
   @keyframes pulse {
     0% { transform: scale(0.92); opacity: 0; }
@@ -226,7 +226,7 @@
     display: none; align-items: center; justify-content: center; z-index: 100;
   }
   .countdown-overlay.show { display: flex; }
-  .countdown-num { font-size: 180px; font-weight: 900; color: #ff4444; animation: countPulse 1s ease-out; }
+  .countdown-num { font-size: 180px; font-weight: 900; color: #3b82f6; animation: countPulse 1s ease-out; }
   @keyframes countPulse {
     0% { transform: scale(0.5); opacity: 0; }
     50% { transform: scale(1.1); opacity: 1; }
@@ -321,7 +321,7 @@
     <div class="round-tabs" id="roundTabs"></div>
   </div>
 
-  <div id="editingRoundLabel" style="font-size:17px;font-weight:700;color:#ff4444;margin-bottom:14px;">Раунд 1</div>
+  <div id="editingRoundLabel" style="font-size:17px;font-weight:700;color:#3b82f6;margin-bottom:14px;">Раунд 1</div>
 
   <!-- Per-round override toggle -->
   <div class="toggle-row" data-toggle="custom" style="margin-bottom:0;">
@@ -929,7 +929,7 @@ function onPhaseEnd() {
     $('timer').classList.add('rest'); $('timer').classList.remove('work');
     $('phaseLabel').textContent = 'Отдых';
     $('comboType').textContent = 'Восстановление';
-    $('comboType').className = 'combo-type'; $('comboType').style.color = '#4a9eff';
+    $('comboType').className = 'combo-type'; $('comboType').style.color = '#22d3ee';
     $('comboText').textContent = 'Дыши, пей воду';
     $('comboNumbers').textContent = '';
     speak('Отдых');
