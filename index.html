@@ -290,6 +290,11 @@
       <input type="range" id="paceMaxSlider" min="2" max="15" value="7" step="1">
       <div class="hint" id="paceRangeHint" style="text-align:left;margin-top:8px;">Пауза будет случайной от 2 до 7 сек</div>
     </div>
+    <div class="slider-row">
+      <div class="top"><span>Скорость голоса</span><span class="val" id="voiceRateVal">1.1×</span></div>
+      <input type="range" id="voiceRateSlider" min="6" max="18" value="11" step="1">
+      <div class="hint" style="text-align:left;margin-top:8px;">медленно ← → быстро</div>
+    </div>
   </div>
 
   <!-- MANUAL builder -->
@@ -500,6 +505,7 @@ let state = {
   paceMode: 'fixed', // 'fixed' | 'range'
   paceMin: 2,
   paceMax: 7,
+  voiceRate: 1.1,
   bell: true,
   // per-round config. roundConfigs[i] = { moves: [названия], order: 'sequence'|'random' }
   roundConfigs: [],
@@ -537,7 +543,7 @@ function speak(text) {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ru-RU';
   if (ruVoice) u.voice = ruVoice;
-  u.rate = 1.1; u.pitch = 1.0; u.volume = 1.0;
+  u.rate = state.voiceRate; u.pitch = 1.0; u.volume = 1.0;
   speechSynthesis.speak(u);
 }
 let audioCtx = null;
@@ -583,6 +589,17 @@ bindSlider('roundsSlider', 'rounds', 'roundsVal');
 bindSlider('workSlider', 'workSec', 'workVal', 60);
 bindSlider('restSlider', 'restSec', 'restVal');
 bindSlider('paceSlider', 'paceSec', 'paceVal');
+
+// Voice rate slider (0.6×–1.8×) + проба голоса
+let voiceTestTimer = null;
+$('voiceRateSlider').addEventListener('input', () => {
+  const v = parseInt($('voiceRateSlider').value) / 10;
+  state.voiceRate = v;
+  $('voiceRateVal').textContent = v.toFixed(1) + '×';
+  // Проговорить пример с небольшой задержкой, чтобы не тараторить при перетаскивании
+  clearTimeout(voiceTestTimer);
+  voiceTestTimer = setTimeout(() => speak('Раз, два'), 350);
+});
 
 // Pace mode toggle (fixed / range)
 $('paceModeToggle').addEventListener('click', e => {
