@@ -343,6 +343,24 @@
         <div class="top"><span>Длительность концовки (сек)</span><span class="val" id="finisherSecVal">15</span></div>
         <input type="range" id="finisherSecSlider" min="5" max="30" value="15" step="5">
       </div>
+      <div class="slider-row">
+        <div class="top" style="margin-bottom:10px;"><span>Темп в финишере</span></div>
+        <div class="order-toggle" id="finisherPaceModeToggle" style="margin-bottom:0;">
+          <div class="opt" data-finpacemode="fixed">Фикс</div>
+          <div class="opt active" data-finpacemode="range">Диапазон</div>
+        </div>
+      </div>
+      <div class="slider-row" id="finisherPaceFixedRow" style="display:none;">
+        <div class="top"><span>Пауза (сек)</span><span class="val" id="finisherPaceVal">3</span></div>
+        <input type="range" id="finisherPaceSlider" min="1" max="8" value="3" step="1">
+      </div>
+      <div class="slider-row" id="finisherPaceRangeRow">
+        <div class="top"><span>От (сек)</span><span class="val" id="finisherPaceMinVal">1</span></div>
+        <input type="range" id="finisherPaceMinSlider" min="1" max="7" value="1" step="1">
+        <div class="top" style="margin-top:12px;"><span>До (сек)</span><span class="val" id="finisherPaceMaxVal">3</span></div>
+        <input type="range" id="finisherPaceMaxSlider" min="2" max="10" value="3" step="1">
+        <div class="hint" id="finisherPaceRangeHint" style="text-align:left;margin-top:8px;">Пауза будет случайной от 1 до 3 сек</div>
+      </div>
       <button class="ghost-btn" id="openFinisherBtn" style="margin-top:8px;">Набор команд финишера →</button>
       <div class="hint" id="finisherSummary" style="margin-top:6px;">Команды финишера не выбраны</div>
     </div>
@@ -422,6 +440,24 @@
       <div class="slider-row">
         <div class="top"><span>Длительность концовки (сек)</span><span class="val" id="rFinisherSecVal">15</span></div>
         <input type="range" id="rFinisherSecSlider" min="5" max="30" value="15" step="5">
+      </div>
+      <div class="slider-row">
+        <div class="top" style="margin-bottom:10px;"><span>Темп в финишере</span></div>
+        <div class="order-toggle" id="rFinisherPaceModeToggle" style="margin-bottom:0;">
+          <div class="opt" data-rfinpacemode="fixed">Фикс</div>
+          <div class="opt active" data-rfinpacemode="range">Диапазон</div>
+        </div>
+      </div>
+      <div class="slider-row" id="rFinisherPaceFixedRow" style="display:none;">
+        <div class="top"><span>Пауза (сек)</span><span class="val" id="rFinisherPaceVal">3</span></div>
+        <input type="range" id="rFinisherPaceSlider" min="1" max="8" value="3" step="1">
+      </div>
+      <div class="slider-row" id="rFinisherPaceRangeRow">
+        <div class="top"><span>От (сек)</span><span class="val" id="rFinisherPaceMinVal">1</span></div>
+        <input type="range" id="rFinisherPaceMinSlider" min="1" max="7" value="1" step="1">
+        <div class="top" style="margin-top:12px;"><span>До (сек)</span><span class="val" id="rFinisherPaceMaxVal">3</span></div>
+        <input type="range" id="rFinisherPaceMaxSlider" min="2" max="10" value="3" step="1">
+        <div class="hint" id="rFinisherPaceRangeHint" style="text-align:left;margin-top:8px;">Пауза будет случайной от 1 до 3 сек</div>
       </div>
       <button class="ghost-btn" id="rOpenFinisherBtn" style="margin-top:8px;">Набор команд финишера →</button>
       <div class="hint" id="rFinisherSummary" style="margin-top:6px;">Команды финишера не выбраны</div>
@@ -680,7 +716,11 @@ let state = {
   // Финишер — особая концовка раунда
   finisherOn: false,
   finisherSec: 15,
-  finisherMoves: [],   // отдельный набор команд для финишера
+  finisherMoves: [],
+  finisherPaceMode: 'range', // 'fixed' | 'range' — в финишере обычно случайный темп
+  finisherPaceSec: 3,
+  finisherPaceMin: 1,
+  finisherPaceMax: 3,
   bell: true,
   // per-round config. roundConfigs[i] = { moves: [названия], order: 'sequence'|'random' }
   roundConfigs: [],
@@ -831,6 +871,36 @@ $('openFinisherBtn').addEventListener('click', () => {
   showMoveSelector('Финишер: команды', false);
 });
 
+// Глобальный темп финишера
+$('finisherPaceModeToggle').addEventListener('click', e => {
+  const opt = e.target.closest('.opt');
+  if (!opt) return;
+  state.finisherPaceMode = opt.dataset.finpacemode;
+  document.querySelectorAll('#finisherPaceModeToggle .opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.finpacemode === state.finisherPaceMode));
+  $('finisherPaceFixedRow').style.display = state.finisherPaceMode === 'fixed' ? 'block' : 'none';
+  $('finisherPaceRangeRow').style.display = state.finisherPaceMode === 'range' ? 'block' : 'none';
+});
+$('finisherPaceSlider').addEventListener('input', () => {
+  const v = parseInt($('finisherPaceSlider').value);
+  state.finisherPaceSec = v;
+  $('finisherPaceVal').textContent = v;
+});
+$('finisherPaceMinSlider').addEventListener('input', () => {
+  let v = parseInt($('finisherPaceMinSlider').value);
+  if (v >= state.finisherPaceMax) { v = state.finisherPaceMax - 1; $('finisherPaceMinSlider').value = v; }
+  state.finisherPaceMin = v;
+  $('finisherPaceMinVal').textContent = v;
+  $('finisherPaceRangeHint').textContent = `Пауза будет случайной от ${state.finisherPaceMin} до ${state.finisherPaceMax} сек`;
+});
+$('finisherPaceMaxSlider').addEventListener('input', () => {
+  let v = parseInt($('finisherPaceMaxSlider').value);
+  if (v <= state.finisherPaceMin) { v = state.finisherPaceMin + 1; $('finisherPaceMaxSlider').value = v; }
+  state.finisherPaceMax = v;
+  $('finisherPaceMaxVal').textContent = v;
+  $('finisherPaceRangeHint').textContent = `Пауза будет случайной от ${state.finisherPaceMin} до ${state.finisherPaceMax} сек`;
+});
+
 // ============ MANUAL BUILDER ============
 function defaultRoundConfig() {
   return {
@@ -846,6 +916,10 @@ function defaultRoundConfig() {
     finisherOn: false,
     finisherSec: 15,
     finisherMoves: [],
+    finisherPaceMode: 'range',
+    finisherPaceSec: 3,
+    finisherPaceMin: 1,
+    finisherPaceMax: 3,
   };
 }
 function ensureRoundConfigs() {
@@ -864,6 +938,10 @@ function ensureRoundConfigs() {
     if (c.finisherOn === undefined) c.finisherOn = false;
     if (c.finisherSec === undefined) c.finisherSec = 15;
     if (!Array.isArray(c.finisherMoves)) c.finisherMoves = [];
+    if (c.finisherPaceMode === undefined) c.finisherPaceMode = 'range';
+    if (c.finisherPaceSec === undefined) c.finisherPaceSec = 3;
+    if (c.finisherPaceMin === undefined) c.finisherPaceMin = 1;
+    if (c.finisherPaceMax === undefined) c.finisherPaceMax = 3;
     if (Array.isArray(c.moves)) {
       c.moves = c.moves
         .map(m => typeof m === 'number' ? MOVE_LIBRARY[m] : m)
@@ -1093,6 +1171,18 @@ function renderRoundSettings() {
   $('rFinisherSummary').textContent = c.finisherMoves.length === 0
     ? 'Команды финишера не выбраны'
     : `Команд: ${c.finisherMoves.length}`;
+  // Темп финишера
+  document.querySelectorAll('#rFinisherPaceModeToggle .opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.rfinpacemode === c.finisherPaceMode));
+  $('rFinisherPaceFixedRow').style.display = c.finisherPaceMode === 'fixed' ? 'block' : 'none';
+  $('rFinisherPaceRangeRow').style.display = c.finisherPaceMode === 'range' ? 'block' : 'none';
+  $('rFinisherPaceSlider').value = c.finisherPaceSec;
+  $('rFinisherPaceVal').textContent = c.finisherPaceSec;
+  $('rFinisherPaceMinSlider').value = c.finisherPaceMin;
+  $('rFinisherPaceMinVal').textContent = c.finisherPaceMin;
+  $('rFinisherPaceMaxSlider').value = c.finisherPaceMax;
+  $('rFinisherPaceMaxVal').textContent = c.finisherPaceMax;
+  $('rFinisherPaceRangeHint').textContent = `Пауза будет случайной от ${c.finisherPaceMin} до ${c.finisherPaceMax} сек`;
 }
 
 $('t-custom').parentElement.addEventListener('click', () => {
@@ -1157,6 +1247,10 @@ $('rFinisherToggleRow').addEventListener('click', () => {
   // При первом включении подставляем глобальные настройки финишера как стартовые
   if (c.finisherOn && !c._finisherInit) {
     c.finisherSec = state.finisherSec;
+    c.finisherPaceMode = state.finisherPaceMode;
+    c.finisherPaceSec = state.finisherPaceSec;
+    c.finisherPaceMin = state.finisherPaceMin;
+    c.finisherPaceMax = state.finisherPaceMax;
     if (state.finisherMoves.length > 0 && c.finisherMoves.length === 0) {
       c.finisherMoves = [...state.finisherMoves];
     }
@@ -1173,6 +1267,35 @@ $('rOpenFinisherBtn').addEventListener('click', () => {
   navStack.push('round-moves');
   moveListCtx = 'round-finisher';
   showMoveSelector('Финишер раунда ' + (editingRound + 1), false);
+});
+
+// Темп финишера раунда
+$('rFinisherPaceModeToggle').addEventListener('click', e => {
+  const opt = e.target.closest('.opt');
+  if (!opt) return;
+  state.roundConfigs[editingRound].finisherPaceMode = opt.dataset.rfinpacemode;
+  renderRoundSettings();
+});
+$('rFinisherPaceSlider').addEventListener('input', () => {
+  const v = parseInt($('rFinisherPaceSlider').value);
+  state.roundConfigs[editingRound].finisherPaceSec = v;
+  $('rFinisherPaceVal').textContent = v;
+});
+$('rFinisherPaceMinSlider').addEventListener('input', () => {
+  const c = state.roundConfigs[editingRound];
+  let v = parseInt($('rFinisherPaceMinSlider').value);
+  if (v >= c.finisherPaceMax) { v = c.finisherPaceMax - 1; $('rFinisherPaceMinSlider').value = v; }
+  c.finisherPaceMin = v;
+  $('rFinisherPaceMinVal').textContent = v;
+  $('rFinisherPaceRangeHint').textContent = `Пауза будет случайной от ${c.finisherPaceMin} до ${c.finisherPaceMax} сек`;
+});
+$('rFinisherPaceMaxSlider').addEventListener('input', () => {
+  const c = state.roundConfigs[editingRound];
+  let v = parseInt($('rFinisherPaceMaxSlider').value);
+  if (v <= c.finisherPaceMin) { v = c.finisherPaceMin + 1; $('rFinisherPaceMaxSlider').value = v; }
+  c.finisherPaceMax = v;
+  $('rFinisherPaceMaxVal').textContent = v;
+  $('rFinisherPaceRangeHint').textContent = `Пауза будет случайной от ${c.finisherPaceMin} до ${c.finisherPaceMax} сек`;
 });
 
 $('selectAllBtn').addEventListener('click', () => {
@@ -1200,6 +1323,10 @@ $('copyAllBtn').addEventListener('click', () => {
       finisherOn: src.finisherOn,
       finisherSec: src.finisherSec,
       finisherMoves: [...src.finisherMoves],
+      finisherPaceMode: src.finisherPaceMode,
+      finisherPaceSec: src.finisherPaceSec,
+      finisherPaceMin: src.finisherPaceMin,
+      finisherPaceMax: src.finisherPaceMax,
     };
   }
   renderRoundTabs();
@@ -1296,6 +1423,9 @@ function startTimer() {
       playBell(1400, 0.15);
       setTimeout(() => playBell(1400, 0.15), 180);
       setTimeout(() => playBell(1400, 0.25), 360);
+      // Перепланируем следующую команду с финишер-темпом
+      showNextCombo();
+      scheduleNextCombo();
     }
     if (state.phase === 'work' && state.timeLeft > 0 && state.timeLeft <= 10) playTick();
     if (state.timeLeft <= 0) onPhaseEnd();
@@ -1330,6 +1460,15 @@ function onPhaseEnd() {
 }
 
 function nextPaceMs() {
+  // В фазе финишера — свой темп
+  if (inFinisherPhase()) {
+    const f = getFinisherConfig(state.currentRound);
+    if (f.paceMode === 'range') {
+      const sec = f.paceMin + Math.random() * (f.paceMax - f.paceMin);
+      return sec * 1000;
+    }
+    return f.paceSec * 1000;
+  }
   const rs = getRoundSettings(state.currentRound);
   if (rs.paceMode === 'range') {
     const sec = rs.paceMin + Math.random() * (rs.paceMax - rs.paceMin);
@@ -1371,9 +1510,17 @@ function showNextCombo() {
 function getFinisherConfig(roundNum) {
   const c = state.roundConfigs[roundNum - 1];
   if (c && c.custom) {
-    return { on: c.finisherOn, sec: c.finisherSec, moves: c.finisherMoves };
+    return {
+      on: c.finisherOn, sec: c.finisherSec, moves: c.finisherMoves,
+      paceMode: c.finisherPaceMode, paceSec: c.finisherPaceSec,
+      paceMin: c.finisherPaceMin, paceMax: c.finisherPaceMax,
+    };
   }
-  return { on: state.finisherOn, sec: state.finisherSec, moves: state.finisherMoves };
+  return {
+    on: state.finisherOn, sec: state.finisherSec, moves: state.finisherMoves,
+    paceMode: state.finisherPaceMode, paceSec: state.finisherPaceSec,
+    paceMin: state.finisherPaceMin, paceMax: state.finisherPaceMax,
+  };
 }
 
 // В фазе ли финишера прямо сейчас?
