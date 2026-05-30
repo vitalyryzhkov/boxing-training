@@ -142,6 +142,23 @@
   }
 
   .move-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .cat-header {
+    display: flex; align-items: center; gap: 10px; background: #141a24;
+    border: 1.5px solid #2a3650; border-radius: 10px; padding: 12px 14px;
+    cursor: pointer; user-select: none; transition: background 0.12s;
+  }
+  .cat-header:active { background: #1a2030; }
+  .cat-header.has-selected { border-color: #3b82f6; }
+  .cat-arrow { font-size: 12px; color: #888; width: 12px; text-align: center; }
+  .cat-name { flex: 1; font-size: 15px; font-weight: 700; color: #fff; }
+  .cat-count { font-size: 13px; color: #888; font-weight: 600; }
+  .cat-header.has-selected .cat-count { color: #3b82f6; }
+  .cat-all-btn {
+    background: transparent; border: 1.5px solid #2a3650; color: #ccc;
+    padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+  }
+  .cat-all-btn:active { background: #1a2030; }
   .move-item {
     display: flex; align-items: center; justify-content: space-between;
     background: #1a1a1a; padding: 13px 16px; border-radius: 10px;
@@ -176,6 +193,8 @@
   }
   .round-info { font-size: 14px; color: #888; font-weight: 600; }
   .round-info b { color: #fff; }
+  .round-info-big { font-size: 20px; }
+  .round-info-big b { font-size: 24px; }
   .back-btn { background: transparent; border: none; color: #888; font-size: 14px; cursor: pointer; padding: 4px 8px; }
   .done-btn {
     background: #3b82f6; border: none; color: #fff; font-size: 15px; font-weight: 700;
@@ -199,6 +218,12 @@
   }
   .combo-type.attack { color: #3b82f6; }
   .combo-type.defense { color: #22d3ee; }
+  .combo-type.finisher { color: #ff9500; font-weight: 800; letter-spacing: 2.5px; }
+  .timer.finisher { color: #ff9500; animation: finisherPulse 0.6s ease-in-out infinite alternate; }
+  @keyframes finisherPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+  }
   .combo-type.footwork { color: #4ade80; }
   .combo-text { font-size: 36px; font-weight: 800; line-height: 1.2; word-break: break-word; letter-spacing: -1px; }
   .combo-numbers { font-size: 52px; font-weight: 900; color: #3b82f6; margin-top: 12px; letter-spacing: 4px; }
@@ -292,8 +317,8 @@
     </div>
     <div class="slider-row">
       <div class="top"><span>Скорость голоса</span><span class="val" id="voiceRateVal">1.1×</span></div>
-      <input type="range" id="voiceRateSlider" min="6" max="18" value="11" step="1">
-      <div class="hint" style="text-align:left;margin-top:8px;">медленно ← → быстро</div>
+      <input type="range" id="voiceRateSlider" min="11" max="30" value="11" step="1">
+      <div class="hint" style="text-align:left;margin-top:8px;">обычно ← → быстро</div>
     </div>
   </div>
 
@@ -302,6 +327,25 @@
     <div class="setting-label">Свои комбинации</div>
     <button class="builder-open-btn" id="openBuilderBtn">Настроить комбинации по раундам →</button>
     <div class="hint" id="manualSummary">Раунды пока не заполнены</div>
+  </div>
+
+  <div class="setting-group" id="finisherGroup">
+    <div class="setting-label">Финишер (концовка раунда)</div>
+    <div class="toggle-row" data-toggle="finisherOn">
+      <div>
+        <div class="label">Включить финишер</div>
+        <div class="sub">В конце раунда — особый набор</div>
+      </div>
+      <div class="toggle" id="t-finisherOn"></div>
+    </div>
+    <div id="finisherSettings" style="display:none;">
+      <div class="slider-row">
+        <div class="top"><span>Длительность концовки (сек)</span><span class="val" id="finisherSecVal">15</span></div>
+        <input type="range" id="finisherSecSlider" min="5" max="30" value="15" step="5">
+      </div>
+      <button class="ghost-btn" id="openFinisherBtn" style="margin-top:8px;">Набор команд финишера →</button>
+      <div class="hint" id="finisherSummary" style="margin-top:6px;">Команды финишера не выбраны</div>
+    </div>
   </div>
 
   <div class="setting-group">
@@ -365,12 +409,31 @@
       <input type="range" id="rPaceMaxSlider" min="2" max="15" value="7" step="1">
       <div class="hint" id="rPaceRangeHint" style="text-align:left;margin-top:8px;">Пауза будет случайной от 2 до 7 сек</div>
     </div>
+
+    <!-- Финишер per-round -->
+    <div class="toggle-row" id="rFinisherToggleRow" style="margin-top:12px;">
+      <div>
+        <div class="label">Финишер</div>
+        <div class="sub">Особая концовка раунда</div>
+      </div>
+      <div class="toggle" id="t-rFinisherOn"></div>
+    </div>
+    <div id="rFinisherSettings" style="display:none;">
+      <div class="slider-row">
+        <div class="top"><span>Длительность концовки (сек)</span><span class="val" id="rFinisherSecVal">15</span></div>
+        <input type="range" id="rFinisherSecSlider" min="5" max="30" value="15" step="5">
+      </div>
+      <button class="ghost-btn" id="rOpenFinisherBtn" style="margin-top:8px;">Набор команд финишера →</button>
+      <div class="hint" id="rFinisherSummary" style="margin-top:6px;">Команды финишера не выбраны</div>
+    </div>
   </div>
 
-  <div class="setting-label" style="margin-top:14px;">Порядок в этом раунде</div>
-  <div class="order-toggle" id="orderToggle">
-    <div class="opt" data-order="sequence">По порядку</div>
-    <div class="opt active" data-order="random">Случайно</div>
+  <div id="orderBlock">
+    <div class="setting-label" style="margin-top:14px;">Порядок в этом раунде</div>
+    <div class="order-toggle" id="orderToggle">
+      <div class="opt" data-order="sequence">По порядку</div>
+      <div class="opt active" data-order="random">Случайно</div>
+    </div>
   </div>
 
   <div class="builder-actions">
@@ -387,7 +450,7 @@
 <div class="screen" id="training">
   <div class="training-header">
     <button class="back-btn" id="backBtn">← Назад</button>
-    <div class="round-info">Раунд <b id="roundNum">1</b> / <b id="roundTotal">3</b></div>
+    <div class="round-info round-info-big">Раунд <b id="roundNum">1</b> / <b id="roundTotal">3</b></div>
     <div style="width: 50px;"></div>
   </div>
   <div class="timer-section">
@@ -427,74 +490,182 @@
 <script>
 
 // ============ MANUAL MODE: user's move library ============
-const MOVE_LIBRARY = [
-  "В",
-  "Восемь прямых восемь снизу",
-  "Восемь прямых два снизу",
-  "Восемь прямых четыре снизу",
-  "Восемь снизу восемь прямых",
-  "Два джеба",
-  "Два прямых два снизу",
-  "Два прямых два снизу два прямых",
-  "Два прямых два снизу четыре прямых",
-  "Два прямых четыре снизу",
-  "Два прямых шесть снизу",
-  "Два снизу два прямых",
-  "Два снизу четыре прямых",
-  "Двойка",
-  "Двойка боковой",
-  "Джеб",
-  "Джеб сбоку",
-  "Джеб сбоку снизу",
-  "Джеб снизу",
-  "Джеб снизу сбоку",
-  "Джеб ушёл двойка",
-  "Забегание влево",
-  "Забегание вправо",
-  "Кросс",
-  "Кросс хук кросс",
-  "Л",
-  "Левый сбоку правый снизу",
-  "Левый сбоку сбоку снизу",
-  "Левый сбоку снизу снизу сбоку",
-  "Левый снизу",
-  "Левый снизу правый сбоку",
-  "Левый снизу снизу сбоку сбоку снизу",
-  "Левый хук",
-  "Маятник",
-  "Нырок",
-  "Нырок уклон влево",
-  "Нырок уклон вправо",
-  "Почтальон",
-  "Правый сбоку левый снизу",
-  "Правый сбоку сбоку снизу",
-  "Правый сбоку снизу снизу сбоку",
-  "Правый снизу",
-  "Правый снизу левый сбоку",
-  "Правый снизу снизу сбоку сбоку снизу",
-  "Правый хук",
-  "Сайд степ влево",
-  "Сайд степ вправо",
-  "Секретка",
-  "Три джеба",
-  "Три прямых",
-  "Уклон",
-  "Ушёл кросс",
-  "Хук кросс хук",
-  "Четыре прямых",
-  "Четыре прямых восемь снизу",
-  "Четыре прямых два снизу",
-  "Четыре прямых четыре снизу",
-  "Четыре прямых шесть снизу",
-  "Четыре снизу восемь прямых",
-  "Четыре снизу два прямых",
-  "Четыре снизу четыре прямых",
-  "Четыре снизу шесть прямых",
-  "Шесть прямых",
-  "Шесть прямых два снизу",
-  "Шесть прямых четыре снизу",
-  "Шесть прямых шесть снизу",
-];
+const MOVE_CATEGORIES = {
+  "Прямые": [
+    "Восемь прямых",
+    "Двойка",
+    "Десять прямых",
+    "Джеб ушёл двойка",
+    "Левой восемь прямых",
+    "Левой двойка",
+    "Левой десять прямых",
+    "Левой три прямых",
+    "Левой четыре прямых",
+    "Левой шесть прямых",
+    "Почтальон",
+    "Три прямых",
+    "Четыре прямых",
+    "Шесть прямых",
+  ],
+  "Прямые-снизу": [
+    "Восемь прямых восемь снизу",
+    "Восемь прямых два снизу",
+    "Восемь прямых четыре снизу",
+    "Восемь прямых шесть снизу",
+    "Восемь снизу восемь прямых",
+    "Восемь снизу два прямых",
+    "Восемь снизу четыре прямых",
+    "Восемь снизу шесть прямых",
+    "Два прямых восемь снизу",
+    "Два прямых два снизу",
+    "Два прямых три снизу",
+    "Два прямых четыре снизу",
+    "Два прямых шесть снизу",
+    "Два снизу восемь прямых",
+    "Два снизу два прямых",
+    "Два снизу три прямых",
+    "Два снизу четыре прямых",
+    "Два снизу шесть прямых",
+    "Левой восемь прямых восемь снизу",
+    "Левой восемь прямых два снизу",
+    "Левой восемь прямых четыре снизу",
+    "Левой восемь прямых шесть снизу",
+    "Левой восемь снизу восемь прямых",
+    "Левой восемь снизу два прямых",
+    "Левой восемь снизу четыре прямых",
+    "Левой восемь снизу шесть прямых",
+    "Левой два прямых восемь снизу",
+    "Левой два прямых два снизу",
+    "Левой два прямых три снизу",
+    "Левой два прямых четыре снизу",
+    "Левой два прямых шесть снизу",
+    "Левой два снизу восемь прямых",
+    "Левой два снизу два прямых",
+    "Левой два снизу три прямых",
+    "Левой два снизу четыре прямых",
+    "Левой два снизу шесть прямых",
+    "Левой три прямых два снизу",
+    "Левой три прямых три снизу",
+    "Левой три снизу два прямых",
+    "Левой три снизу три прямых",
+    "Левой четыре прямых два снизу",
+    "Левой четыре прямых четыре снизу",
+    "Левой четыре прямых шесть снизу",
+    "Левой четыре снизу два прямых",
+    "Левой четыре снизу четыре прямых",
+    "Левой четыре снизу шесть прямых",
+    "Левой шесть прямых два снизу",
+    "Левой шесть прямых четыре снизу",
+    "Левой шесть прямых шесть снизу",
+    "Левой шесть снизу два прямых",
+    "Левой шесть снизу четыре прямых",
+    "Левой шесть снизу шесть прямых",
+    "Три прямых два снизу",
+    "Три прямых три снизу",
+    "Три снизу два прямых",
+    "Три снизу три прямых",
+    "Четыре прямых два снизу",
+    "Четыре прямых четыре снизу",
+    "Четыре прямых шесть снизу",
+    "Четыре снизу два прямых",
+    "Четыре снизу четыре прямых",
+    "Четыре снизу шесть прямых",
+    "Шесть прямых два снизу",
+    "Шесть прямых четыре снизу",
+    "Шесть прямых шесть снизу",
+    "Шесть снизу два прямых",
+    "Шесть снизу четыре прямых",
+    "Шесть снизу шесть прямых",
+  ],
+  "Боковые": [
+    "Левый хук",
+    "Правый хук",
+    "Слевой восемь боковых",
+    "Слевой два боковых",
+    "Слевой четыре боковых",
+    "Слевой шесть боковых",
+    "Справой восемь боковых",
+    "Справой два боковых",
+    "Справой четыре боковых",
+    "Справой шесть боковых",
+  ],
+  "Одной рукой": [
+    "Два джеба",
+    "Два кросса",
+    "Два хука левой",
+    "Два хука правой",
+    "Джеб",
+    "Джеб снизу",
+    "Джеб снизу хук",
+    "Джеб ушёл джеб",
+    "Джеб хук",
+    "Джеб хук джеб",
+    "Джеб хук снизу",
+    "Кросс",
+    "Кросс ушёл кросс",
+    "Левой сбоку левой снизу",
+    "Левой снизу левой сбоку",
+    "Левый снизу",
+    "Правой сбоку правой снизу",
+    "Правой снизу правой сбоку",
+    "Правый снизу",
+    "Три джеба",
+    "Три кросса",
+    "Три хука левой",
+    "Три хука правой",
+    "Четыре джеба",
+    "Четыре кросса",
+    "Четыре хука левой",
+    "Четыре хука правой",
+    "Шесть хуков левой",
+    "Шесть хуков правой",
+  ],
+  "Серии": [
+    "Два боковых снизу левой",
+    "Два боковых снизу правой",
+    "Два снизу два сбоку снизу левой",
+    "Два снизу два сбоку снизу правой",
+    "Двойка боковой",
+    "Кросс хук кросс",
+    "Секретка",
+    "Снизу сбоку сбоку снизу левой",
+    "Снизу сбоку сбоку снизу правой",
+    "Хук кросс хук",
+  ],
+  "Защита": [
+    "Два нырка",
+    "Два нырка два уклона",
+    "Два уклона",
+    "Два уклона два нырка",
+    "Два уклона нырок",
+    "Нырок влево",
+    "Нырок вправо",
+    "Три нырка",
+    "Три уклона",
+    "Уклон влево",
+    "Уклон вправо",
+    "Уклон два нырка",
+    "Уклон нырок",
+    "Четыре нырка",
+    "Четыре уклона",
+  ],
+  "Другое": [
+    "Два назад сайд степ влево",
+    "Два назад сайд степ вправо",
+    "Забегание влево",
+    "Забегание вправо",
+    "Корпус",
+    "Левый снизу правый хук",
+    "Левый хук правый снизу",
+    "Правый снизу левый хук",
+    "Правый хук левый снизу",
+    "Сайд степ влево",
+    "Сайд степ вправо",
+  ],
+};
+
+// Плоский список — для совместимости и валидации
+const MOVE_LIBRARY = Object.values(MOVE_CATEGORIES).flat();
 
 // ============ STATE ============
 let state = {
@@ -506,6 +677,10 @@ let state = {
   paceMin: 2,
   paceMax: 7,
   voiceRate: 1.1,
+  // Финишер — особая концовка раунда
+  finisherOn: false,
+  finisherSec: 15,
+  finisherMoves: [],   // отдельный набор команд для финишера
   bell: true,
   // per-round config. roundConfigs[i] = { moves: [названия], order: 'sequence'|'random' }
   roundConfigs: [],
@@ -631,13 +806,29 @@ $('paceMaxSlider').addEventListener('input', () => {
   updatePaceRangeHint();
 });
 
-document.querySelectorAll('[data-toggle="bell"]').forEach(row => {
+document.querySelectorAll('[data-toggle="bell"], [data-toggle="finisherOn"]').forEach(row => {
   row.addEventListener('click', () => {
     const key = row.dataset.toggle;
     const t = row.querySelector('.toggle');
     t.classList.toggle('on');
     state[key] = t.classList.contains('on');
+    if (key === 'finisherOn') {
+      $('finisherSettings').style.display = state.finisherOn ? 'block' : 'none';
+    }
   });
+});
+
+// Финишер: длительность
+$('finisherSecSlider').addEventListener('input', () => {
+  const v = parseInt($('finisherSecSlider').value);
+  state.finisherSec = v;
+  $('finisherSecVal').textContent = v;
+});
+
+// Финишер: открыть выбор команд (тот же экран builder, но в другом контексте)
+$('openFinisherBtn').addEventListener('click', () => {
+  moveListCtx = 'global-finisher';
+  showMoveSelector('Финишер: команды', false);
 });
 
 // ============ MANUAL BUILDER ============
@@ -645,13 +836,16 @@ function defaultRoundConfig() {
   return {
     moves: [],
     order: 'random',
-    custom: false,        // использовать ли свои настройки
+    custom: false,
     workSec: 180,
     restSec: 60,
     paceMode: 'fixed',
     paceSec: 5,
     paceMin: 2,
     paceMax: 7,
+    finisherOn: false,
+    finisherSec: 15,
+    finisherMoves: [],
   };
 }
 function ensureRoundConfigs() {
@@ -659,7 +853,6 @@ function ensureRoundConfigs() {
     state.roundConfigs.push(defaultRoundConfig());
   }
   state.roundConfigs.length = state.rounds;
-  // Бэкап-совместимость: дополнить отсутствующие поля
   state.roundConfigs.forEach(c => {
     if (c.custom === undefined) c.custom = false;
     if (c.workSec === undefined) c.workSec = 180;
@@ -668,8 +861,9 @@ function ensureRoundConfigs() {
     if (c.paceSec === undefined) c.paceSec = 5;
     if (c.paceMin === undefined) c.paceMin = 2;
     if (c.paceMax === undefined) c.paceMax = 7;
-    // moves хранятся как названия. Отфильтровываем те, которых больше нет в библиотеке
-    // (и заодно мигрируем старый формат, если вдруг там были числовые индексы)
+    if (c.finisherOn === undefined) c.finisherOn = false;
+    if (c.finisherSec === undefined) c.finisherSec = 15;
+    if (!Array.isArray(c.finisherMoves)) c.finisherMoves = [];
     if (Array.isArray(c.moves)) {
       c.moves = c.moves
         .map(m => typeof m === 'number' ? MOVE_LIBRARY[m] : m)
@@ -677,6 +871,7 @@ function ensureRoundConfigs() {
     } else {
       c.moves = [];
     }
+    c.finisherMoves = c.finisherMoves.filter(m => MOVE_LIBRARY.includes(m));
   });
 }
 function updateManualSummary() {
@@ -690,15 +885,52 @@ function updateManualSummary() {
 
 $('openBuilderBtn').addEventListener('click', () => {
   ensureRoundConfigs();
+  moveListCtx = 'round-moves';
   editingRound = 0;
-  renderRoundTabs();
-  renderMoveList();
-  renderOrderToggle();
-  renderRoundSettings();
-  showScreen('builder');
+  showMoveSelector(null, true);
 });
+
+// Стек возврата для финишера: куда возвращаться по «Готово»
+const navStack = [];
+
+function showMoveSelector(customTitle, showRoundUI) {
+  if (showRoundUI) {
+    $('roundTabs').parentElement.style.display = '';
+    document.querySelector('.builder-sticky .setting-label').style.display = '';
+    $('roundTabs').style.display = '';
+    $('editingRoundLabel').style.display = '';
+    document.querySelector('[data-toggle="custom"]').style.display = '';
+    $('roundSettings').style.display = state.roundConfigs[editingRound].custom ? 'block' : 'none';
+    $('copyAllBtn').style.display = '';
+    $('orderBlock').style.display = '';
+    document.querySelector('#builder .round-info').textContent = 'Конструктор';
+    renderRoundTabs();
+    renderOrderToggle();
+    renderRoundSettings();
+  } else {
+    document.querySelector('.builder-sticky .setting-label').style.display = 'none';
+    $('roundTabs').style.display = 'none';
+    $('editingRoundLabel').style.display = 'none';
+    document.querySelector('[data-toggle="custom"]').style.display = 'none';
+    $('roundSettings').style.display = 'none';
+    $('copyAllBtn').style.display = 'none';
+    $('orderBlock').style.display = 'none';
+    document.querySelector('#builder .round-info').textContent = customTitle || 'Команды';
+  }
+  renderMoveList();
+  showScreen('builder');
+}
 $('builderBackBtn').addEventListener('click', () => {
-  updateManualSummary();
+  updateAllSummaries();
+  // Если в стеке есть «возврат в конструктор» — возвращаемся туда, иначе на setup
+  if (navStack.length > 0) {
+    const ret = navStack.pop();
+    if (ret === 'round-moves') {
+      moveListCtx = 'round-moves';
+      showMoveSelector(null, true);
+      return;
+    }
+  }
   showScreen('setup');
 });
 
@@ -729,24 +961,91 @@ function renderRoundTabs() {
   }
 }
 
+// Контекст выбора команд: что именно редактируем
+// 'round-moves'      — комбинации раунда editingRound
+// 'round-finisher'   — финишер раунда editingRound (если custom)
+// 'global-finisher'  — общий финишер (state.finisherMoves)
+let moveListCtx = 'round-moves';
+
+function getSelectedArray() {
+  if (moveListCtx === 'global-finisher') return state.finisherMoves;
+  if (moveListCtx === 'round-finisher') return state.roundConfigs[editingRound].finisherMoves;
+  return state.roundConfigs[editingRound].moves;
+}
+function setSelectedArray(arr) {
+  if (moveListCtx === 'global-finisher') state.finisherMoves = arr;
+  else if (moveListCtx === 'round-finisher') state.roundConfigs[editingRound].finisherMoves = arr;
+  else state.roundConfigs[editingRound].moves = arr;
+}
+
+// Состояние сворачивания категорий
+const collapsedCats = {};
+Object.keys(MOVE_CATEGORIES).forEach(c => { collapsedCats[c] = true; });
+
 function renderMoveList() {
   const list = $('moveList');
   list.innerHTML = '';
-  const selected = state.roundConfigs[editingRound].moves;
-  MOVE_LIBRARY.forEach((move) => {
-    const item = document.createElement('div');
-    const isSel = selected.includes(move);
-    item.className = 'move-item' + (isSel ? ' selected' : '');
-    item.innerHTML = `<span class="mtext">${move}</span><span class="check">${isSel ? '✓' : ''}</span>`;
-    item.addEventListener('click', () => {
-      const arr = state.roundConfigs[editingRound].moves;
-      const pos = arr.indexOf(move);
-      if (pos === -1) arr.push(move);
-      else arr.splice(pos, 1);
-      renderMoveList(); renderRoundTabs();
+  const selected = getSelectedArray();
+
+  Object.entries(MOVE_CATEGORIES).forEach(([catName, moves]) => {
+    const selInCat = moves.filter(m => selected.includes(m)).length;
+    const isCollapsed = collapsedCats[catName];
+
+    const header = document.createElement('div');
+    header.className = 'cat-header' + (selInCat > 0 ? ' has-selected' : '');
+    header.innerHTML = `
+      <span class="cat-arrow">${isCollapsed ? '▸' : '▾'}</span>
+      <span class="cat-name">${catName}</span>
+      <span class="cat-count">${selInCat > 0 ? selInCat + '/' : ''}${moves.length}</span>
+      <button class="cat-all-btn" data-cat="${catName}">${selInCat === moves.length ? 'Снять' : 'Все'}</button>
+    `;
+    header.querySelector('.cat-all-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      const arr = getSelectedArray();
+      if (selInCat === moves.length) {
+        setSelectedArray(arr.filter(m => !moves.includes(m)));
+      } else {
+        moves.forEach(m => { if (!arr.includes(m)) arr.push(m); });
+      }
+      renderMoveList(); renderRoundTabs(); updateAllSummaries();
     });
-    list.appendChild(item);
+    header.addEventListener('click', () => {
+      collapsedCats[catName] = !collapsedCats[catName];
+      renderMoveList();
+    });
+    list.appendChild(header);
+
+    if (isCollapsed) return;
+
+    moves.forEach((move) => {
+      const item = document.createElement('div');
+      const isSel = selected.includes(move);
+      item.className = 'move-item' + (isSel ? ' selected' : '');
+      item.innerHTML = `<span class="mtext">${move}</span><span class="check">${isSel ? '✓' : ''}</span>`;
+      item.addEventListener('click', () => {
+        const arr = getSelectedArray();
+        const pos = arr.indexOf(move);
+        if (pos === -1) arr.push(move);
+        else arr.splice(pos, 1);
+        renderMoveList(); renderRoundTabs(); updateAllSummaries();
+      });
+      list.appendChild(item);
+    });
   });
+}
+
+function updateAllSummaries() {
+  updateManualSummary();
+  $('finisherSummary').textContent = state.finisherMoves.length === 0
+    ? 'Команды финишера не выбраны'
+    : `Команд: ${state.finisherMoves.length}`;
+  // Per-round финишер (если виден)
+  const c = state.roundConfigs[editingRound];
+  if (c && $('rFinisherSummary')) {
+    $('rFinisherSummary').textContent = c.finisherMoves.length === 0
+      ? 'Команды финишера не выбраны'
+      : `Команд: ${c.finisherMoves.length}`;
+  }
 }
 
 function renderOrderToggle() {
@@ -786,6 +1085,14 @@ function renderRoundSettings() {
   $('rPaceMaxSlider').value = c.paceMax;
   $('rPaceMaxVal').textContent = c.paceMax;
   $('rPaceRangeHint').textContent = `Пауза будет случайной от ${c.paceMin} до ${c.paceMax} сек`;
+  // Финишер
+  $('t-rFinisherOn').classList.toggle('on', c.finisherOn);
+  $('rFinisherSettings').style.display = c.finisherOn ? 'block' : 'none';
+  $('rFinisherSecSlider').value = c.finisherSec;
+  $('rFinisherSecVal').textContent = c.finisherSec;
+  $('rFinisherSummary').textContent = c.finisherMoves.length === 0
+    ? 'Команды финишера не выбраны'
+    : `Команд: ${c.finisherMoves.length}`;
 }
 
 $('t-custom').parentElement.addEventListener('click', () => {
@@ -843,13 +1150,38 @@ $('rPaceMaxSlider').addEventListener('input', () => {
   $('rPaceRangeHint').textContent = `Пауза будет случайной от ${c.paceMin} до ${c.paceMax} сек`;
 });
 
+// Финишер раунда
+$('rFinisherToggleRow').addEventListener('click', () => {
+  const c = state.roundConfigs[editingRound];
+  c.finisherOn = !c.finisherOn;
+  // При первом включении подставляем глобальные настройки финишера как стартовые
+  if (c.finisherOn && !c._finisherInit) {
+    c.finisherSec = state.finisherSec;
+    if (state.finisherMoves.length > 0 && c.finisherMoves.length === 0) {
+      c.finisherMoves = [...state.finisherMoves];
+    }
+    c._finisherInit = true;
+  }
+  renderRoundSettings();
+});
+$('rFinisherSecSlider').addEventListener('input', () => {
+  const v = parseInt($('rFinisherSecSlider').value);
+  state.roundConfigs[editingRound].finisherSec = v;
+  $('rFinisherSecVal').textContent = v;
+});
+$('rOpenFinisherBtn').addEventListener('click', () => {
+  navStack.push('round-moves');
+  moveListCtx = 'round-finisher';
+  showMoveSelector('Финишер раунда ' + (editingRound + 1), false);
+});
+
 $('selectAllBtn').addEventListener('click', () => {
-  state.roundConfigs[editingRound].moves = [...MOVE_LIBRARY];
-  renderMoveList(); renderRoundTabs();
+  setSelectedArray([...MOVE_LIBRARY]);
+  renderMoveList(); renderRoundTabs(); updateAllSummaries();
 });
 $('clearBtn').addEventListener('click', () => {
-  state.roundConfigs[editingRound].moves = [];
-  renderMoveList(); renderRoundTabs();
+  setSelectedArray([]);
+  renderMoveList(); renderRoundTabs(); updateAllSummaries();
 });
 $('copyAllBtn').addEventListener('click', () => {
   const src = state.roundConfigs[editingRound];
@@ -865,6 +1197,9 @@ $('copyAllBtn').addEventListener('click', () => {
       paceSec: src.paceSec,
       paceMin: src.paceMin,
       paceMax: src.paceMax,
+      finisherOn: src.finisherOn,
+      finisherSec: src.finisherSec,
+      finisherMoves: [...src.finisherMoves],
     };
   }
   renderRoundTabs();
@@ -936,19 +1271,32 @@ function startRound() {
   const rs = getRoundSettings(state.currentRound);
   state.timeLeft = rs.workSec;
   state.seqPointer = 0;
-  $('timer').classList.remove('rest'); $('timer').classList.add('work');
+  $('timer').classList.remove('rest', 'finisher'); $('timer').classList.add('work');
   $('phaseLabel').textContent = 'Работа';
   updateTimer();
   startTimer();
   startCombos();
 }
 
+let wasInFinisher = false;
 function startTimer() {
   clearInterval(timerInterval);
+  wasInFinisher = false;
   timerInterval = setInterval(() => {
     if (state.paused) return;
     state.timeLeft--;
     updateTimer();
+    // Финишер-фаза: подсветка таймера и звук на старте
+    const inFin = inFinisherPhase();
+    if (inFin && !wasInFinisher) {
+      wasInFinisher = true;
+      $('timer').classList.add('finisher');
+      $('phaseLabel').textContent = '🔥 ФИНИШ';
+      // Гонг финишера — три коротких высоких сигнала
+      playBell(1400, 0.15);
+      setTimeout(() => playBell(1400, 0.15), 180);
+      setTimeout(() => playBell(1400, 0.25), 360);
+    }
     if (state.phase === 'work' && state.timeLeft > 0 && state.timeLeft <= 10) playTick();
     if (state.timeLeft <= 0) onPhaseEnd();
   }, 1000);
@@ -965,7 +1313,7 @@ function onPhaseEnd() {
     if (state.currentRound >= state.rounds) { finishTraining(); return; }
     state.phase = 'rest';
     state.timeLeft = getRoundSettings(state.currentRound).restSec;
-    $('timer').classList.add('rest'); $('timer').classList.remove('work');
+    $('timer').classList.add('rest'); $('timer').classList.remove('work', 'finisher');
     $('phaseLabel').textContent = 'Отдых';
     $('comboType').textContent = 'Восстановление';
     $('comboType').className = 'combo-type'; $('comboType').style.color = '#22d3ee';
@@ -1019,26 +1367,64 @@ function showNextCombo() {
   state.comboCount++;
 }
 
+// Активные настройки финишера для текущего раунда: либо per-round (если custom), либо глобальные
+function getFinisherConfig(roundNum) {
+  const c = state.roundConfigs[roundNum - 1];
+  if (c && c.custom) {
+    return { on: c.finisherOn, sec: c.finisherSec, moves: c.finisherMoves };
+  }
+  return { on: state.finisherOn, sec: state.finisherSec, moves: state.finisherMoves };
+}
+
+// В фазе ли финишера прямо сейчас?
+function inFinisherPhase() {
+  if (state.phase !== 'work') return false;
+  const f = getFinisherConfig(state.currentRound);
+  if (!f.on || f.moves.length === 0) return false;
+  return state.timeLeft <= f.sec;
+}
+
 function showManualMove() {
   const cfg = state.roundConfigs[state.currentRound - 1];
-  if (!cfg || cfg.moves.length === 0) {
-    // round not configured — just show a rest-like prompt
+  const inFin = inFinisherPhase();
+
+  // Какой массив команд используем
+  let pool, isFinisher;
+  if (inFin) {
+    pool = getFinisherConfig(state.currentRound).moves;
+    isFinisher = true;
+  } else {
+    pool = cfg ? cfg.moves : [];
+    isFinisher = false;
+  }
+
+  if (!pool || pool.length === 0) {
     $('comboType').textContent = 'Раунд не настроен';
     $('comboType').className = 'combo-type'; $('comboType').style.color = '#888';
     $('comboText').textContent = 'Свободная работа';
     $('comboNumbers').textContent = '';
     return;
   }
+
   let move;
-  if (cfg.order === 'random') {
-    move = pick(cfg.moves);
+  if (isFinisher) {
+    // В финишере — всегда случайно (для разнообразия)
+    move = pick(pool);
+  } else if (cfg.order === 'random') {
+    move = pick(pool);
   } else {
-    move = cfg.moves[state.seqPointer % cfg.moves.length];
+    move = pool[state.seqPointer % pool.length];
     state.seqPointer++;
   }
+
   flashCombo();
-  $('comboType').textContent = 'Команда';
-  $('comboType').className = 'combo-type attack';
+  if (isFinisher) {
+    $('comboType').textContent = '🔥 ФИНИШ';
+    $('comboType').className = 'combo-type finisher';
+  } else {
+    $('comboType').textContent = 'Команда';
+    $('comboType').className = 'combo-type attack';
+  }
   $('comboType').style.color = '';
   $('comboText').textContent = move;
   $('comboNumbers').textContent = '';
