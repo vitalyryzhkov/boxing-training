@@ -108,6 +108,21 @@
   }
   .builder-open-btn:active { transform: scale(0.98); }
 
+  .workout-item {
+    display: flex; align-items: center; gap: 10px; background: #1a1a1a;
+    border: 1.5px solid #2a2a2a; border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 8px; cursor: pointer; transition: background 0.12s;
+  }
+  .workout-item:active { background: #222; }
+  .workout-item .wname { flex: 1; font-size: 15px; font-weight: 600; color: #fff; }
+  .workout-item .wmeta { font-size: 12px; color: #888; margin-top: 2px; }
+  .workout-item .wload { font-size: 13px; color: #3b82f6; font-weight: 700; }
+  .workout-item .wdel {
+    background: transparent; border: none; color: #ff5555; font-size: 20px;
+    cursor: pointer; padding: 4px 8px; line-height: 1;
+  }
+  .workout-empty { font-size: 13px; color: #666; text-align: center; padding: 8px 0; }
+
   /* MANUAL BUILDER */
   .round-tabs {
     display: flex; gap: 8px; overflow-x: auto; overflow-y: visible;
@@ -372,6 +387,12 @@
       <div><div class="label">Гонг</div><div class="sub">Начало и конец раундов</div></div>
       <div class="toggle on" id="t-bell"></div>
     </div>
+  </div>
+
+  <div class="setting-group" id="workoutsGroup">
+    <div class="setting-label">Мои тренировки</div>
+    <div id="workoutsList"></div>
+    <button class="ghost-btn" id="saveWorkoutBtn" style="margin-top:8px;">💾 Сохранить текущую тренировку</button>
   </div>
 
   <button class="start-btn" id="startBtn">Начать тренировку</button>
@@ -1625,9 +1646,157 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && $('training').classList.contains('active')) requestWakeLock();
 });
 
+// ============ СОХРАНЁННЫЕ ТРЕНИРОВКИ ============
+const WORKOUTS_KEY = 'boxing_workouts_v1';
+
+function loadWorkouts() {
+  try {
+    const raw = localStorage.getItem(WORKOUTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveWorkouts(list) {
+  try { localStorage.setItem(WORKOUTS_KEY, JSON.stringify(list)); } catch(e) { alert('Не удалось сохранить (нет доступа к хранилищу).'); }
+}
+
+// Снимок текущей конфигурации тренировки
+function snapshotWorkout() {
+  return {
+    rounds: state.rounds,
+    workSec: state.workSec,
+    restSec: state.restSec,
+    paceSec: state.paceSec,
+    paceMode: state.paceMode,
+    paceMin: state.paceMin,
+    paceMax: state.paceMax,
+    voiceRate: state.voiceRate,
+    finisherOn: state.finisherOn,
+    finisherSec: state.finisherSec,
+    finisherMoves: [...state.finisherMoves],
+    finisherPaceMode: state.finisherPaceMode,
+    finisherPaceSec: state.finisherPaceSec,
+    finisherPaceMin: state.finisherPaceMin,
+    finisherPaceMax: state.finisherPaceMax,
+    bell: state.bell,
+    roundConfigs: JSON.parse(JSON.stringify(state.roundConfigs)),
+  };
+}
+
+// Применить сохранённую конфигурацию в state и обновить UI
+function applyWorkout(w) {
+  Object.assign(state, {
+    rounds: w.rounds, workSec: w.workSec, restSec: w.restSec,
+    paceSec: w.paceSec, paceMode: w.paceMode, paceMin: w.paceMin, paceMax: w.paceMax,
+    voiceRate: w.voiceRate != null ? w.voiceRate : 1.1,
+    finisherOn: !!w.finisherOn, finisherSec: w.finisherSec || 15,
+    finisherMoves: Array.isArray(w.finisherMoves) ? [...w.finisherMoves] : [],
+    finisherPaceMode: w.finisherPaceMode || 'range',
+    finisherPaceSec: w.finisherPaceSec || 3,
+    finisherPaceMin: w.finisherPaceMin || 1,
+    finisherPaceMax: w.finisherPaceMax || 3,
+    bell: w.bell !== false,
+  });
+  state.roundConfigs = Array.isArray(w.roundConfigs) ? JSON.parse(JSON.stringify(w.roundConfigs)) : [];
+  ensureRoundConfigs();
+  syncSetupUI();
+}
+
+// Синхронизировать главный экран с текущим state
+function syncSetupUI() {
+  $('roundsSlider').value = state.rounds; $('roundsVal').textContent = state.rounds;
+  $('workSlider').value = Math.round(state.workSec/60); $('workVal').textContent = Math.round(state.workSec/60);
+  $('restSlider').value = state.restSec; $('restVal').textContent = state.restSec;
+  $('paceSlider').value = state.paceSec; $('paceVal').textContent = state.paceSec;
+  // pace mode
+  document.querySelectorAll('#paceModeToggle .opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.pacemode === state.paceMode));
+  $('paceFixedRow').style.display = state.paceMode === 'fixed' ? 'block' : 'none';
+  $('paceRangeRow').style.display = state.paceMode === 'range' ? 'block' : 'none';
+  $('paceMinSlider').value = state.paceMin; $('paceMinVal').textContent = state.paceMin;
+  $('paceMaxSlider').value = state.paceMax; $('paceMaxVal').textContent = state.paceMax;
+  $('paceRangeHint').textContent = `Пауза будет случайной от ${state.paceMin} до ${state.paceMax} сек`;
+  // voice
+  $('voiceRateSlider').value = Math.round(state.voiceRate*10); $('voiceRateVal').textContent = state.voiceRate.toFixed(1)+'×';
+  // bell
+  $('t-bell').classList.toggle('on', state.bell);
+  // finisher
+  $('t-finisherOn').classList.toggle('on', state.finisherOn);
+  $('finisherSettings').style.display = state.finisherOn ? 'block' : 'none';
+  $('finisherSecSlider').value = state.finisherSec; $('finisherSecVal').textContent = state.finisherSec;
+  document.querySelectorAll('#finisherPaceModeToggle .opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.finpacemode === state.finisherPaceMode));
+  $('finisherPaceFixedRow').style.display = state.finisherPaceMode === 'fixed' ? 'block' : 'none';
+  $('finisherPaceRangeRow').style.display = state.finisherPaceMode === 'range' ? 'block' : 'none';
+  $('finisherPaceSlider').value = state.finisherPaceSec; $('finisherPaceVal').textContent = state.finisherPaceSec;
+  $('finisherPaceMinSlider').value = state.finisherPaceMin; $('finisherPaceMinVal').textContent = state.finisherPaceMin;
+  $('finisherPaceMaxSlider').value = state.finisherPaceMax; $('finisherPaceMaxVal').textContent = state.finisherPaceMax;
+  $('finisherPaceRangeHint').textContent = `Пауза будет случайной от ${state.finisherPaceMin} до ${state.finisherPaceMax} сек`;
+  updateManualSummary();
+  if (typeof updateAllSummaries === 'function') updateAllSummaries();
+}
+
+function renderWorkouts() {
+  const list = $('workoutsList');
+  const workouts = loadWorkouts();
+  list.innerHTML = '';
+  if (workouts.length === 0) {
+    list.innerHTML = '<div class="workout-empty">Пока нет сохранённых тренировок</div>';
+    return;
+  }
+  workouts.forEach((w, idx) => {
+    const item = document.createElement('div');
+    item.className = 'workout-item';
+    const filledRounds = (w.roundConfigs || []).filter(c => c.moves && c.moves.length > 0).length;
+    item.innerHTML = `
+      <div style="flex:1;">
+        <div class="wname">${w.name}</div>
+        <div class="wmeta">${w.rounds} раунд(ов) · заполнено ${filledRounds} · ${Math.round(w.workSec/60)} мин</div>
+      </div>
+      <span class="wload">Загрузить</span>
+      <button class="wdel" title="Удалить">×</button>
+    `;
+    item.querySelector('.wdel').addEventListener('click', e => {
+      e.stopPropagation();
+      if (confirm(`Удалить тренировку «${w.name}»?`)) {
+        const arr = loadWorkouts();
+        arr.splice(idx, 1);
+        saveWorkouts(arr);
+        renderWorkouts();
+      }
+    });
+    item.addEventListener('click', () => {
+      applyWorkout(w);
+      alert(`Загружена тренировка «${w.name}»`);
+    });
+    list.appendChild(item);
+  });
+}
+
+$('saveWorkoutBtn').addEventListener('click', () => {
+  ensureRoundConfigs();
+  const name = prompt('Название тренировки:', '');
+  if (name === null) return;
+  const trimmed = name.trim();
+  if (!trimmed) { alert('Введите название.'); return; }
+  const arr = loadWorkouts();
+  const existing = arr.findIndex(w => w.name.toLowerCase() === trimmed.toLowerCase());
+  const data = snapshotWorkout();
+  data.name = trimmed;
+  if (existing !== -1) {
+    if (!confirm(`Тренировка «${trimmed}» уже есть. Перезаписать?`)) return;
+    arr[existing] = data;
+  } else {
+    arr.push(data);
+  }
+  saveWorkouts(arr);
+  renderWorkouts();
+  alert(`Сохранено: «${trimmed}»`);
+});
+
 // ============ INIT ============
 ensureRoundConfigs();
 updateManualSummary();
+renderWorkouts();
 
 // ============ PWA: register service worker ============
 if ('serviceWorker' in navigator) {
