@@ -1,5 +1,5 @@
 // Boxing Trainer — service worker (офлайн-кэш)
-const CACHE = 'boxing-trainer-v17';
+const CACHE = 'boxing-trainer-v18';
 const ASSETS = [
   './',
   './index.html',

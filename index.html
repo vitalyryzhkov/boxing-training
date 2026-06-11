@@ -301,12 +301,17 @@
       <input type="range" id="roundsSlider" min="1" max="12" value="3">
     </div>
     <div class="slider-row">
+      <div class="top"><span>Задержка перед стартом</span><span class="val" id="prepVal">15 сек</span></div>
+      <input type="range" id="prepSlider" min="0" max="180" value="15" step="15">
+      <div class="hint" style="text-align:left;margin-top:8px;">Время надеть перчатки</div>
+    </div>
+    <div class="slider-row">
       <div class="top"><span>Длина раунда (мин)</span><span class="val" id="workVal">3</span></div>
-      <input type="range" id="workSlider" min="1" max="5" value="3" step="1">
+      <input type="range" id="workSlider" min="1" max="15" value="3" step="1">
     </div>
     <div class="slider-row">
       <div class="top"><span>Отдых (сек)</span><span class="val" id="restVal">60</span></div>
-      <input type="range" id="restSlider" min="15" max="120" value="60" step="15">
+      <input type="range" id="restSlider" min="5" max="180" value="60" step="1">
     </div>
     <div class="slider-row">
       <div class="top" style="margin-bottom:10px;">
@@ -424,11 +429,11 @@
   <div id="roundSettings" style="display:none;" class="round-settings-box">
     <div class="slider-row">
       <div class="top"><span>Длина раунда (мин)</span><span class="val" id="rWorkVal">3</span></div>
-      <input type="range" id="rWorkSlider" min="1" max="5" value="3" step="1">
+      <input type="range" id="rWorkSlider" min="1" max="15" value="3" step="1">
     </div>
     <div class="slider-row">
       <div class="top"><span>Отдых после (сек)</span><span class="val" id="rRestVal">60</span></div>
-      <input type="range" id="rRestSlider" min="15" max="120" value="60" step="15">
+      <input type="range" id="rRestSlider" min="5" max="180" value="60" step="1">
     </div>
     <div class="slider-row">
       <div class="top" style="margin-bottom:10px;"><span>Темп команд</span></div>
@@ -734,6 +739,7 @@ const MOVE_LIBRARY = Object.values(MOVE_CATEGORIES).flat();
 // ============ STATE ============
 let state = {
   rounds: 3,
+  prepSec: 15,
   workSec: 180,
   restSec: 60,
   paceSec: 5,
@@ -832,6 +838,18 @@ bindSlider('roundsSlider', 'rounds', 'roundsVal');
 bindSlider('workSlider', 'workSec', 'workVal', 60);
 bindSlider('restSlider', 'restSec', 'restVal');
 bindSlider('paceSlider', 'paceSec', 'paceVal');
+
+// Задержка перед стартом
+function fmtPrep(sec) {
+  if (sec === 0) return 'Выкл';
+  if (sec < 60) return sec + ' сек';
+  const m = Math.floor(sec/60), s = sec%60;
+  return s === 0 ? `${m} мин` : `${m} мин ${s} сек`;
+}
+$('prepSlider').addEventListener('input', () => {
+  state.prepSec = parseInt($('prepSlider').value);
+  $('prepVal').textContent = fmtPrep(state.prepSec);
+});
 
 // Voice rate slider (0.6×–1.8×) + проба голоса
 let voiceTestTimer = null;
@@ -1383,9 +1401,48 @@ $('startBtn').addEventListener('click', async () => {
   state.startTime = Date.now();
   $('roundTotal').textContent = state.rounds;
 
+  await prepCountdown();
   await countdownStart();
   startRound();
 });
+
+// Фаза подготовки — успеть надеть перчатки. Тап по экрану пропускает.
+async function prepCountdown() {
+  if (!state.prepSec || state.prepSec <= 0) return;
+  const overlay = $('countdown'), num = $('countdownNum');
+  overlay.classList.add('show');
+
+  // Подпись и кнопка пропуска
+  let label = document.getElementById('prepLabel');
+  if (!label) {
+    label = document.createElement('div');
+    label.id = 'prepLabel';
+    label.style.cssText = 'position:absolute;top:18%;left:0;right:0;text-align:center;font-size:18px;color:#888;font-weight:600;letter-spacing:1px;';
+    overlay.appendChild(label);
+  }
+  label.textContent = 'Подготовка — нажми, чтобы пропустить';
+  label.style.display = 'block';
+
+  num.style.fontSize = '96px';
+
+  let remaining = state.prepSec;
+  let skipped = false;
+  const skip = () => { skipped = true; };
+  overlay.addEventListener('click', skip);
+
+  while (remaining > 0 && !skipped) {
+    const m = Math.floor(remaining/60), s = remaining%60;
+    num.textContent = m > 0 ? `${m}:${s.toString().padStart(2,'0')}` : String(s);
+    if (remaining <= 3) { speak(String(remaining)); playTick(); }
+    await sleep(1000);
+    remaining--;
+  }
+
+  overlay.removeEventListener('click', skip);
+  label.style.display = 'none';
+  num.style.fontSize = '';
+  overlay.classList.remove('show');
+}
 
 async function countdownStart() {
   const overlay = $('countdown'), num = $('countdownNum');
@@ -1663,6 +1720,7 @@ function saveWorkouts(list) {
 function snapshotWorkout() {
   return {
     rounds: state.rounds,
+    prepSec: state.prepSec,
     workSec: state.workSec,
     restSec: state.restSec,
     paceSec: state.paceSec,
@@ -1686,6 +1744,7 @@ function snapshotWorkout() {
 function applyWorkout(w) {
   Object.assign(state, {
     rounds: w.rounds, workSec: w.workSec, restSec: w.restSec,
+    prepSec: w.prepSec != null ? w.prepSec : 15,
     paceSec: w.paceSec, paceMode: w.paceMode, paceMin: w.paceMin, paceMax: w.paceMax,
     voiceRate: w.voiceRate != null ? w.voiceRate : 1.1,
     finisherOn: !!w.finisherOn, finisherSec: w.finisherSec || 15,
@@ -1704,6 +1763,7 @@ function applyWorkout(w) {
 // Синхронизировать главный экран с текущим state
 function syncSetupUI() {
   $('roundsSlider').value = state.rounds; $('roundsVal').textContent = state.rounds;
+  $('prepSlider').value = state.prepSec; $('prepVal').textContent = fmtPrep(state.prepSec);
   $('workSlider').value = Math.round(state.workSec/60); $('workVal').textContent = Math.round(state.workSec/60);
   $('restSlider').value = state.restSec; $('restVal').textContent = state.restSec;
   $('paceSlider').value = state.paceSec; $('paceVal').textContent = state.paceSec;
