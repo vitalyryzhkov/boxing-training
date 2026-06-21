@@ -158,15 +158,19 @@
 
   .move-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
   .cat-header {
-    display: flex; align-items: center; gap: 10px; background: #141a24;
-    border: 1.5px solid #2a3650; border-radius: 10px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #1c2740, #16203a);
+    border: 1.5px solid #3b5588; border-radius: 10px; padding: 14px 14px;
     cursor: pointer; user-select: none; transition: background 0.12s;
+    margin-top: 4px;
   }
   .cat-header:active { background: #1a2030; }
-  .cat-header.has-selected { border-color: #22c55e; }
-  .cat-arrow { font-size: 12px; color: #888; width: 12px; text-align: center; }
-  .cat-name { flex: 1; font-size: 15px; font-weight: 700; color: #fff; }
-  .cat-count { font-size: 13px; color: #888; font-weight: 600; }
+  .cat-arrow { font-size: 13px; color: #7da2e0; width: 12px; text-align: center; }
+  .cat-name {
+    flex: 1; font-size: 15px; font-weight: 800; color: #93b4f0;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .cat-count { font-size: 13px; color: #8aa0c0; font-weight: 700; }
   .cat-header.has-selected .cat-count { color: #22c55e; }
   .cat-all-btn {
     background: transparent; border: 1.5px solid #2a3650; color: #ccc;
