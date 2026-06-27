@@ -192,24 +192,34 @@
     font-size: 14px; color: #fff; transition: all 0.12s;
   }
   .move-item.selected .check { background: #22c55e; border-color: #22c55e; }
-  .move-item .move-del {
-    background: transparent; border: none; color: #ff5555; font-size: 22px;
-    cursor: pointer; padding: 0 6px; line-height: 1; flex-shrink: 0;
+  .move-item .move-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; margin-left: 6px; }
+  .move-item .move-edit, .move-item .move-del {
+    background: transparent; border: none; cursor: pointer;
+    width: 30px; height: 30px; border-radius: 7px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
   }
+  .move-item .move-edit { color: #8aa0c0; font-size: 15px; }
+  .move-item .move-del { color: #c06060; font-size: 17px; }
+  .move-item .move-edit:active { background: #1c2740; }
+  .move-item .move-del:active { background: #3a1a1a; }
   .move-add {
     text-align: center; padding: 11px; border-radius: 10px;
     border: 1.5px dashed #2a3650; color: #7da2e0; font-size: 13px; font-weight: 700;
     cursor: pointer; background: transparent; margin-bottom: 2px;
   }
   .move-add:active { background: #14203a; }
+  .group-actions { display: flex; gap: 8px; margin-bottom: 6px; }
+  .group-actions .grp-btn {
+    flex: 1; padding: 9px; border-radius: 9px; font-size: 12px; font-weight: 700;
+    cursor: pointer; background: #161616; border: 1.5px solid #2a2a2a; color: #999;
+  }
+  .group-actions .grp-edit:active { background: #1c2740; }
+  .group-actions .grp-del { color: #c06060; }
+  .group-actions .grp-del:active { background: #2a1414; }
   .cat-name .cat-tag {
     font-size: 10px; font-weight: 700; color: #0a0a0a; background: #7da2e0;
     padding: 2px 6px; border-radius: 6px; margin-left: 8px; letter-spacing: 0;
     text-transform: none; vertical-align: middle;
-  }
-  .cat-del-btn {
-    background: transparent; border: none; color: #ff5555; font-size: 15px;
-    cursor: pointer; padding: 4px 6px; line-height: 1;
   }
   .group-add-btn {
     text-align: center; padding: 14px; border-radius: 12px; margin-top: 12px;
@@ -218,6 +228,12 @@
     text-transform: uppercase; letter-spacing: 1px;
   }
   .group-add-btn:active { background: #1a2030; }
+  .reset-builtins {
+    text-align: center; padding: 12px; margin-top: 8px; border-radius: 10px;
+    color: #888; font-size: 12px; font-weight: 600; cursor: pointer;
+    border: 1px solid #1f1f1f;
+  }
+  .reset-builtins:active { background: #161616; }
 
   .builder-actions { display: flex; gap: 8px; margin-bottom: 8px; }
   .builder-actions .ghost-btn { margin-top: 0; }
@@ -763,89 +779,190 @@ const BUILTIN_CATEGORIES = {
   ],
 };
 
-// ===== Свои группы и серии (пользовательские) =====
+// ===== Свои + изменённые группы и серии (пользовательский слой) =====
 const CUSTOM_KEY = 'boxing_custom_moves_v1';
-// custom = { groups: [названия своих групп], moves: { "Группа": [свои серии] } }
+// custom = {
+//   groups: [имена своих групп],
+//   cmoves: { groupKey: [свои серии] },        // groupKey: 'b:'+встроенная или 'c:'+своя
+//   hiddenGroups: [ключи скрытых встроенных групп],
+//   renamedGroups: { встроенныйКлюч: новоеИмя },
+//   hiddenMoves: [скрытые встроенные серии],
+//   renamedMoves: { встроеннаяСерия: новоеИмя }
+// }
+function gkeyBuiltin(k) { return 'b:' + k; }
+function gkeyCustom(n) { return 'c:' + n; }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
 let custom = loadCustom();
 
 function loadCustom() {
-  try {
-    const obj = JSON.parse(localStorage.getItem(CUSTOM_KEY) || 'null');
-    if (!obj || typeof obj !== 'object') return { groups: [], moves: {} };
-    return {
-      groups: Array.isArray(obj.groups) ? obj.groups : [],
-      moves: (obj.moves && typeof obj.moves === 'object') ? obj.moves : {}
-    };
-  } catch(e) { return { groups: [], moves: {} }; }
+  const base = { groups: [], cmoves: {}, hiddenGroups: [], renamedGroups: {}, hiddenMoves: [], renamedMoves: {} };
+  let o;
+  try { o = JSON.parse(localStorage.getItem(CUSTOM_KEY) || 'null'); } catch(e) { o = null; }
+  if (!o || typeof o !== 'object') return base;
+  // миграция со старого формата { groups:[имена], moves:{ имяГруппы:[серии] } }
+  if (o.moves && !o.cmoves) {
+    base.groups = Array.isArray(o.groups) ? o.groups.slice() : [];
+    Object.entries(o.moves).forEach(([g, arr]) => {
+      if (!Array.isArray(arr)) return;
+      const key = BUILTIN_CATEGORIES[g] ? gkeyBuiltin(g) : gkeyCustom(g);
+      base.cmoves[key] = arr.slice();
+      if (!BUILTIN_CATEGORIES[g] && !base.groups.includes(g)) base.groups.push(g);
+    });
+    return base;
+  }
+  return {
+    groups: Array.isArray(o.groups) ? o.groups : [],
+    cmoves: (o.cmoves && typeof o.cmoves === 'object') ? o.cmoves : {},
+    hiddenGroups: Array.isArray(o.hiddenGroups) ? o.hiddenGroups : [],
+    renamedGroups: (o.renamedGroups && typeof o.renamedGroups === 'object') ? o.renamedGroups : {},
+    hiddenMoves: Array.isArray(o.hiddenMoves) ? o.hiddenMoves : [],
+    renamedMoves: (o.renamedMoves && typeof o.renamedMoves === 'object') ? o.renamedMoves : {},
+  };
 }
 function saveCustom() {
   try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom)); }
   catch(e) { alert('Не удалось сохранить (нет доступа к хранилищу).'); }
 }
 
-// MOVE_CATEGORIES = встроенные + свои; MOVE_LIBRARY — плоский список для валидации
+// MOVE_CATEGORIES (имя→[имена]) и MOVE_LIBRARY — для остального кода.
+// CATEGORY_META — для рендера: знает происхождение каждой группы и серии.
 let MOVE_CATEGORIES = {};
 let MOVE_LIBRARY = [];
-const collapsedCats = {}; // состояние сворачивания групп
+let CATEGORY_META = [];
+const collapsedCats = {}; // состояние сворачивания, ключ = g.key
 
 function rebuildCategories() {
-  const out = {};
-  // встроенные группы (со встроенными + добавленными в них своими сериями)
-  Object.entries(BUILTIN_CATEGORIES).forEach(([g, moves]) => {
-    out[g] = moves.slice();
-    (custom.moves[g] || []).forEach(m => { if (!out[g].includes(m)) out[g].push(m); });
+  const meta = [];
+  // встроенные группы (с учётом скрытия/переименования)
+  Object.entries(BUILTIN_CATEGORIES).forEach(([gk, moves]) => {
+    if (custom.hiddenGroups.includes(gk)) return;
+    const gname = custom.renamedGroups[gk] || gk;
+    const gm = { name: gname, key: gkeyBuiltin(gk), builtinKey: gk, custom: false, moves: [] };
+    moves.forEach(mk => {
+      if (custom.hiddenMoves.includes(mk)) return;
+      gm.moves.push({ name: custom.renamedMoves[mk] || mk, builtinKey: mk, custom: false });
+    });
+    (custom.cmoves[gkeyBuiltin(gk)] || []).forEach(mn =>
+      gm.moves.push({ name: mn, builtinKey: null, custom: true }));
+    meta.push(gm);
   });
   // полностью свои группы
-  custom.groups.forEach(g => {
-    if (!out[g]) out[g] = [];
-    (custom.moves[g] || []).forEach(m => { if (!out[g].includes(m)) out[g].push(m); });
+  custom.groups.forEach(gn => {
+    const gm = { name: gn, key: gkeyCustom(gn), builtinKey: null, custom: true, moves: [] };
+    (custom.cmoves[gkeyCustom(gn)] || []).forEach(mn =>
+      gm.moves.push({ name: mn, builtinKey: null, custom: true }));
+    meta.push(gm);
+  });
+  CATEGORY_META = meta;
+  const out = {};
+  meta.forEach(g => {
+    out[g.name] = out[g.name] || [];
+    g.moves.forEach(m => { if (!out[g.name].includes(m.name)) out[g.name].push(m.name); });
   });
   MOVE_CATEGORIES = out;
   MOVE_LIBRARY = Object.values(out).flat();
-  Object.keys(out).forEach(g => { if (!(g in collapsedCats)) collapsedCats[g] = true; });
+  meta.forEach(g => { if (!(g.key in collapsedCats)) collapsedCats[g.key] = true; });
 }
 
-function isCustomGroup(g) { return custom.groups.includes(g); }
-function isCustomMove(g, m) { return (custom.moves[g] || []).includes(m); }
+// ---- выборы в раундах/финишерах ----
+function replaceInSelections(oldName, newName) {
+  if (typeof state === 'undefined') return;
+  const rep = a => Array.isArray(a) ? a.map(m => m === oldName ? newName : m) : a;
+  state.finisherMoves = rep(state.finisherMoves);
+  state.roundConfigs.forEach(c => { c.moves = rep(c.moves); c.finisherMoves = rep(c.finisherMoves); });
+}
+function purgeMoveFromSelections(name) {
+  if (typeof state === 'undefined') return;
+  const f = a => Array.isArray(a) ? a.filter(m => m !== name) : a;
+  state.finisherMoves = f(state.finisherMoves);
+  state.roundConfigs.forEach(c => { c.moves = f(c.moves); c.finisherMoves = f(c.finisherMoves); });
+}
+function nameTaken(name, exceptName) { return MOVE_LIBRARY.some(m => m === name && m !== exceptName); }
 
-function addCustomMove(group, name) {
+// ---- добавление ----
+function addCustomMove(groupKey, name) {
   name = (name || '').trim();
   if (!name) return false;
-  if (MOVE_LIBRARY.includes(name)) { alert(`«${name}» уже есть в списке.`); return false; }
-  if (!custom.moves[group]) custom.moves[group] = [];
-  custom.moves[group].push(name);
+  if (nameTaken(name)) { alert(`«${name}» уже есть в списке.`); return false; }
+  (custom.cmoves[groupKey] = custom.cmoves[groupKey] || []).push(name);
   saveCustom(); rebuildCategories();
   return true;
 }
 function addCustomGroup(name) {
   name = (name || '').trim();
   if (!name) return false;
-  if (MOVE_CATEGORIES[name]) { alert('Группа с таким названием уже есть.'); return false; }
+  if (CATEGORY_META.some(g => g.name === name)) { alert('Группа с таким названием уже есть.'); return false; }
   custom.groups.push(name);
-  if (!custom.moves[name]) custom.moves[name] = [];
   saveCustom(); rebuildCategories();
-  collapsedCats[name] = false; // сразу раскрыть новую группу
+  collapsedCats[gkeyCustom(name)] = false;
   return true;
 }
-function purgeMoveFromSelections(name) {
-  if (typeof state === 'undefined') return;
-  state.finisherMoves = state.finisherMoves.filter(m => m !== name);
-  state.roundConfigs.forEach(c => {
-    if (Array.isArray(c.moves)) c.moves = c.moves.filter(m => m !== name);
-    if (Array.isArray(c.finisherMoves)) c.finisherMoves = c.finisherMoves.filter(m => m !== name);
-  });
+
+// ---- редактирование / удаление серий (встроенных и своих) ----
+function editMove(m, g, newName) {
+  newName = (newName || '').trim();
+  if (!newName || newName === m.name) return false;
+  if (nameTaken(newName, m.name)) { alert(`«${newName}» уже есть в списке.`); return false; }
+  if (m.custom) {
+    const arr = custom.cmoves[g.key] || [];
+    const i = arr.indexOf(m.name);
+    if (i !== -1) arr[i] = newName;
+  } else {
+    custom.renamedMoves[m.builtinKey] = newName;
+  }
+  replaceInSelections(m.name, newName);
+  saveCustom(); rebuildCategories();
+  return true;
 }
-function removeCustomMove(group, name) {
-  if (custom.moves[group]) custom.moves[group] = custom.moves[group].filter(m => m !== name);
-  purgeMoveFromSelections(name);
+function deleteMove(m, g) {
+  if (m.custom) {
+    custom.cmoves[g.key] = (custom.cmoves[g.key] || []).filter(x => x !== m.name);
+  } else {
+    if (!custom.hiddenMoves.includes(m.builtinKey)) custom.hiddenMoves.push(m.builtinKey);
+    delete custom.renamedMoves[m.builtinKey];
+  }
+  purgeMoveFromSelections(m.name);
   saveCustom(); rebuildCategories();
 }
-function removeCustomGroup(group) {
-  const moves = (custom.moves[group] || []).slice();
-  custom.groups = custom.groups.filter(g => g !== group);
-  delete custom.moves[group];
-  delete collapsedCats[group];
-  moves.forEach(purgeMoveFromSelections);
+
+// ---- редактирование / удаление групп (встроенных и своих) ----
+function editGroup(g, newName) {
+  newName = (newName || '').trim();
+  if (!newName || newName === g.name) return false;
+  if (CATEGORY_META.some(x => x.name === newName)) { alert('Группа с таким названием уже есть.'); return false; }
+  if (g.custom) {
+    const oldKey = gkeyCustom(g.name), newKey = gkeyCustom(newName);
+    custom.groups = custom.groups.map(x => x === g.name ? newName : x);
+    if (custom.cmoves[oldKey]) { custom.cmoves[newKey] = custom.cmoves[oldKey]; delete custom.cmoves[oldKey]; }
+    if (g.key in collapsedCats) { collapsedCats[newKey] = collapsedCats[g.key]; delete collapsedCats[g.key]; }
+  } else {
+    custom.renamedGroups[g.builtinKey] = newName;
+  }
+  saveCustom(); rebuildCategories();
+  return true;
+}
+function deleteGroup(g) {
+  g.moves.forEach(m => purgeMoveFromSelections(m.name));
+  if (g.custom) {
+    custom.groups = custom.groups.filter(x => x !== g.name);
+  } else {
+    if (!custom.hiddenGroups.includes(g.builtinKey)) custom.hiddenGroups.push(g.builtinKey);
+    delete custom.renamedGroups[g.builtinKey];
+  }
+  delete custom.cmoves[g.key];
+  delete collapsedCats[g.key];
+  saveCustom(); rebuildCategories();
+}
+
+// ---- сброс изменений встроенных ----
+function hasBuiltinOverrides() {
+  return custom.hiddenGroups.length || custom.hiddenMoves.length ||
+    Object.keys(custom.renamedGroups).length || Object.keys(custom.renamedMoves).length;
+}
+function resetBuiltins() {
+  custom.hiddenGroups = []; custom.hiddenMoves = [];
+  custom.renamedGroups = {}; custom.renamedMoves = {};
   saveCustom(); rebuildCategories();
 }
 
@@ -1223,92 +1340,92 @@ function renderMoveList() {
   const list = $('moveList');
   list.innerHTML = '';
   const selected = getSelectedArray();
+  const refresh = () => { renderMoveList(); renderRoundTabs(); updateAllSummaries(); };
 
-  Object.entries(MOVE_CATEGORIES).forEach(([catName, moves]) => {
-    const selInCat = moves.filter(m => selected.includes(m)).length;
-    const isCollapsed = collapsedCats[catName];
-    const customGroup = isCustomGroup(catName);
+  CATEGORY_META.forEach((g) => {
+    const moves = g.moves;
+    const names = moves.map(m => m.name);
+    const selInCat = moves.filter(m => selected.includes(m.name)).length;
+    const isCollapsed = collapsedCats[g.key];
     const allSelected = moves.length > 0 && selInCat === moves.length;
 
     const header = document.createElement('div');
     header.className = 'cat-header' + (selInCat > 0 ? ' has-selected' : '');
     header.innerHTML = `
       <span class="cat-arrow">${isCollapsed ? '▸' : '▾'}</span>
-      <span class="cat-name">${catName}${customGroup ? '<span class="cat-tag">своя</span>' : ''}</span>
+      <span class="cat-name">${esc(g.name)}${g.custom ? '<span class="cat-tag">своя</span>' : ''}</span>
       <span class="cat-count">${selInCat > 0 ? selInCat + '/' : ''}${moves.length}</span>
-      ${customGroup ? `<button class="cat-del-btn" title="Удалить группу">🗑</button>` : ''}
-      <button class="cat-all-btn" data-cat="${catName}">${allSelected ? 'Снять' : 'Все'}</button>
+      <button class="cat-all-btn">${allSelected ? 'Снять' : 'Все'}</button>
     `;
     header.querySelector('.cat-all-btn').addEventListener('click', e => {
       e.stopPropagation();
       const arr = getSelectedArray();
-      if (allSelected) {
-        setSelectedArray(arr.filter(m => !moves.includes(m)));
-      } else {
-        moves.forEach(m => { if (!arr.includes(m)) arr.push(m); });
-      }
-      renderMoveList(); renderRoundTabs(); updateAllSummaries();
+      if (allSelected) setSelectedArray(arr.filter(m => !names.includes(m)));
+      else names.forEach(n => { if (!arr.includes(n)) arr.push(n); });
+      refresh();
     });
-    if (customGroup) {
-      header.querySelector('.cat-del-btn').addEventListener('click', e => {
-        e.stopPropagation();
-        if (confirm(`Удалить свою группу «${catName}» вместе с её сериями?`)) {
-          removeCustomGroup(catName);
-          renderMoveList(); renderRoundTabs(); updateAllSummaries();
-        }
-      });
-    }
-    header.addEventListener('click', () => {
-      collapsedCats[catName] = !collapsedCats[catName];
-      renderMoveList();
-    });
+    header.addEventListener('click', () => { collapsedCats[g.key] = !collapsedCats[g.key]; renderMoveList(); });
     list.appendChild(header);
 
     if (isCollapsed) return;
 
-    moves.forEach((move) => {
+    moves.forEach((m) => {
+      const isSel = selected.includes(m.name);
       const item = document.createElement('div');
-      const isSel = selected.includes(move);
-      const customMove = isCustomMove(catName, move);
       item.className = 'move-item' + (isSel ? ' selected' : '');
-      item.innerHTML = `<span class="mtext">${move}</span>`
-        + (customMove ? `<button class="move-del" title="Удалить серию">×</button>` : '')
-        + `<span class="check">${isSel ? '✓' : ''}</span>`;
+      item.innerHTML = `
+        <span class="mtext">${esc(m.name)}</span>
+        <span class="move-actions">
+          <button class="move-edit" title="Изменить">✎</button>
+          <button class="move-del" title="Удалить">✕</button>
+        </span>
+        <span class="check">${isSel ? '✓' : ''}</span>`;
       item.addEventListener('click', () => {
         const arr = getSelectedArray();
-        const pos = arr.indexOf(move);
-        if (pos === -1) arr.push(move);
-        else arr.splice(pos, 1);
-        renderMoveList(); renderRoundTabs(); updateAllSummaries();
+        const pos = arr.indexOf(m.name);
+        if (pos === -1) arr.push(m.name); else arr.splice(pos, 1);
+        refresh();
       });
-      if (customMove) {
-        item.querySelector('.move-del').addEventListener('click', e => {
-          e.stopPropagation();
-          if (confirm(`Удалить свою серию «${move}»?`)) {
-            removeCustomMove(catName, move);
-            renderMoveList(); renderRoundTabs(); updateAllSummaries();
-          }
-        });
-      }
+      item.querySelector('.move-edit').addEventListener('click', e => {
+        e.stopPropagation();
+        const v = prompt('Изменить серию:', m.name);
+        if (v === null) return;
+        if (editMove(m, g, v)) refresh();
+      });
+      item.querySelector('.move-del').addEventListener('click', e => {
+        e.stopPropagation();
+        if (confirm(`Удалить серию «${m.name}»?`)) { deleteMove(m, g); refresh(); }
+      });
       list.appendChild(item);
     });
 
-    // Добавить свою серию в эту группу
+    // Добавить серию в эту группу
     const addRow = document.createElement('div');
     addRow.className = 'move-add';
     addRow.textContent = '+ Добавить серию';
     addRow.addEventListener('click', () => {
-      const input = prompt(`Новая серия в группу «${catName}».\nНесколько — через запятую или с новой строки:`, '');
+      const input = prompt(`Новая серия в группу «${g.name}».\nНесколько — через запятую или с новой строки:`, '');
       if (input === null) return;
-      const names = input.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+      const arr = input.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
       let added = 0;
-      names.forEach(n => { if (addCustomMove(catName, n)) added++; });
-      if (added) {
-        collapsedCats[catName] = false;
-        renderMoveList(); renderRoundTabs(); updateAllSummaries();
-      }
+      arr.forEach(n => { if (addCustomMove(g.key, n)) added++; });
+      if (added) { collapsedCats[g.key] = false; refresh(); }
     });
     list.appendChild(addRow);
+
+    // Действия с группой (работают и для встроенных)
+    const ga = document.createElement('div');
+    ga.className = 'group-actions';
+    ga.innerHTML = `<button class="grp-btn grp-edit">✎ Переименовать</button><button class="grp-btn grp-del">✕ Удалить группу</button>`;
+    ga.querySelector('.grp-edit').addEventListener('click', () => {
+      const v = prompt('Название группы:', g.name);
+      if (v === null) return;
+      if (editGroup(g, v)) refresh();
+    });
+    ga.querySelector('.grp-del').addEventListener('click', () => {
+      if (confirm(`Удалить группу «${g.name}»${moves.length ? ' вместе с её сериями' : ''}?`)) { deleteGroup(g); refresh(); }
+    });
+    list.appendChild(ga);
   });
 
   // Добавить свою группу
@@ -1318,9 +1435,22 @@ function renderMoveList() {
   addGroup.addEventListener('click', () => {
     const name = prompt('Название новой группы:', '');
     if (name === null) return;
-    if (addCustomGroup(name)) { renderMoveList(); renderRoundTabs(); updateAllSummaries(); }
+    if (addCustomGroup(name)) refresh();
   });
   list.appendChild(addGroup);
+
+  // Сброс изменений встроенных
+  if (hasBuiltinOverrides()) {
+    const reset = document.createElement('div');
+    reset.className = 'reset-builtins';
+    reset.textContent = '↺ Вернуть встроенные к стандарту';
+    reset.addEventListener('click', () => {
+      if (confirm('Вернуть все встроенные серии и группы к стандарту? Свои серии и группы останутся.')) {
+        resetBuiltins(); refresh();
+      }
+    });
+    list.appendChild(reset);
+  }
 }
 
 function updateAllSummaries() {
