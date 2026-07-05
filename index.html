@@ -87,6 +87,13 @@
     width: 22px; height: 22px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: none;
   }
 
+  .step-btn {
+    width: 30px; height: 30px; border-radius: 8px; background: #2a2a2a;
+    border: none; color: #fff; font-size: 20px; font-weight: 700; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .step-btn:active { background: #3b82f6; }
+
   .start-btn {
     background: #3b82f6; color: #fff; border: none; padding: 18px; border-radius: 14px;
     font-size: 18px; font-weight: 700; cursor: pointer; margin-top: auto;
@@ -193,6 +200,13 @@
   }
   .move-item.selected .check { background: #22c55e; border-color: #22c55e; }
   .move-item .move-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; margin-left: 6px; }
+  .move-item .move-weight {
+    background: #16233c; border: 1.5px solid #2a3a5a; color: #7da2e0;
+    min-width: 36px; height: 30px; border-radius: 8px; font-size: 13px; font-weight: 800;
+    cursor: pointer; padding: 0 6px; display: flex; align-items: center; justify-content: center; margin-right: 2px;
+  }
+  .move-item .move-weight.active { background: #1e3a5f; border-color: #3b82f6; color: #9ecbff; }
+  .move-item .move-weight:active { background: #24457a; }
   .move-item .move-edit, .move-item .move-del {
     background: transparent; border: none; cursor: pointer;
     width: 30px; height: 30px; border-radius: 7px; line-height: 1;
@@ -234,6 +248,18 @@
     border: 1px solid #1f1f1f;
   }
   .reset-builtins:active { background: #161616; }
+
+  .seg-item { background: #141414; border: 1.5px solid #2a2a2a; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .seg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .seg-num { font-size: 13px; font-weight: 800; color: #3b82f6; flex-shrink: 0; }
+  .seg-name { flex: 1; background: #1a1a1a; border: 1.5px solid #2a2a2a; color: #fff; border-radius: 8px; padding: 8px 10px; font-size: 14px; min-width: 0; }
+  .seg-del { background: transparent; border: none; color: #c06060; font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; flex-shrink: 0; }
+  .seg-row { margin-bottom: 8px; }
+  .seg-row .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; color: #aaa; }
+  .seg-row .val { font-size: 15px; font-weight: 700; color: #3b82f6; }
+  .seg-cmd-btn { width: 100%; background: transparent; border: 1.5px solid #2a3650; color: #93b4f0; padding: 10px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .seg-cmd-btn:active { background: #14203a; }
+  .seg-cmd-btn.has { border-color: #22c55e; color: #22c55e; }
 
   .builder-actions { display: flex; gap: 8px; margin-bottom: 8px; }
   .builder-actions .ghost-btn { margin-top: 0; }
@@ -326,6 +352,19 @@
   .done-stats .stat { font-size: 14px; color: #888; margin-bottom: 4px; }
   .done-stats .stat b { color: #fff; font-size: 18px; font-weight: 700; }
 
+  .hstat { flex: 1; background: #1a1a1a; border-radius: 12px; padding: 14px 8px; text-align: center; }
+  .hstat-v { font-size: 24px; font-weight: 800; color: #3b82f6; }
+  .hstat-l { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .preset-item {
+    display: flex; align-items: center; gap: 10px; background: #1a1a1a;
+    border: 1.5px solid #2a2a2a; border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 8px; cursor: pointer; transition: background 0.12s;
+  }
+  .preset-item:active { background: #222; }
+  .preset-item .pname { flex: 1; font-size: 15px; font-weight: 600; color: #fff; }
+  .preset-item .pmeta { font-size: 12px; color: #888; margin-top: 2px; }
+  .preset-item .parrow { color: #3b82f6; font-weight: 700; }
+
   ::-webkit-scrollbar { width: 0; }
 
   .hint { font-size: 12px; color: #666; text-align: center; margin-top: 6px; line-height: 1.4; }
@@ -343,8 +382,14 @@
   <div class="setting-group">
     <div class="setting-label">Раунды — общие настройки</div>
     <div class="slider-row">
-      <div class="top"><span>Количество раундов</span><span class="val" id="roundsVal">3</span></div>
-      <input type="range" id="roundsSlider" min="1" max="12" value="3">
+      <div class="top"><span>Количество раундов</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <button class="step-btn" id="roundsMinus">−</button>
+          <span class="val" id="roundsVal" style="min-width:28px;text-align:center;">3</span>
+          <button class="step-btn" id="roundsPlus">+</button>
+        </span>
+      </div>
+      <input type="range" id="roundsSlider" min="1" max="30" value="3">
     </div>
     <div class="slider-row">
       <div class="top"><span>Задержка перед стартом</span><span class="val" id="prepVal">15 сек</span></div>
@@ -357,7 +402,8 @@
     </div>
     <div class="slider-row">
       <div class="top"><span>Отдых (сек)</span><span class="val" id="restVal">60</span></div>
-      <input type="range" id="restSlider" min="5" max="180" value="60" step="5">
+      <input type="range" id="restSlider" min="0" max="180" value="60" step="5">
+      <div class="hint" style="text-align:left;margin-top:8px;">0 = без паузы, сразу следующий раунд</div>
     </div>
     <div class="slider-row">
       <div class="top" style="margin-bottom:10px;">
@@ -435,9 +481,39 @@
   <div class="setting-group">
     <div class="setting-label">Звук</div>
     <div class="toggle-row" data-toggle="bell">
-      <div><div class="label">Гонг</div><div class="sub">Начало и конец раундов</div></div>
+      <div><div class="label">Гонг</div><div class="sub">Начало и конец раундов + колотушка за 10 сек</div></div>
       <div class="toggle on" id="t-bell"></div>
     </div>
+    <div class="toggle-row" data-toggle="vibrate">
+      <div><div class="label">Вибрация</div><div class="sub">Гонг, колотушка, смена блока</div></div>
+      <div class="toggle on" id="t-vibrate"></div>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Разминка и заминка</div>
+    <div class="slider-row">
+      <div class="top"><span>Разминка (мин)</span><span class="val" id="warmupVal">Выкл</span></div>
+      <input type="range" id="warmupSlider" min="0" max="15" value="0" step="1">
+      <div class="hint" style="text-align:left;margin-top:8px;">Перед раундами — с голосовыми подсказками</div>
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Заминка (мин)</span><span class="val" id="cooldownVal">Выкл</span></div>
+      <input type="range" id="cooldownSlider" min="0" max="15" value="0" step="1">
+      <div class="hint" style="text-align:left;margin-top:8px;">После раундов — восстановление и растяжка</div>
+    </div>
+  </div>
+
+  <div class="setting-group" id="presetsGroup">
+    <div class="setting-label">Готовые программы</div>
+    <div id="presetsList"></div>
+    <div class="hint" style="text-align:left;">Нажми — настройки подставятся, потом можно править</div>
+  </div>
+
+  <div class="setting-group" id="historyGroup">
+    <div class="setting-label">История</div>
+    <div class="hint" id="historySummary" style="text-align:left;">Пока нет завершённых тренировок</div>
+    <button class="ghost-btn" id="openHistoryBtn" style="margin-top:8px;">📊 Показать историю</button>
   </div>
 
   <div class="setting-group" id="workoutsGroup">
@@ -479,7 +555,7 @@
     </div>
     <div class="slider-row">
       <div class="top"><span>Отдых после (сек)</span><span class="val" id="rRestVal">60</span></div>
-      <input type="range" id="rRestSlider" min="5" max="180" value="60" step="5">
+      <input type="range" id="rRestSlider" min="0" max="180" value="60" step="5">
     </div>
     <div class="slider-row">
       <div class="top" style="margin-bottom:10px;"><span>Темп команд</span></div>
@@ -536,6 +612,20 @@
     </div>
   </div>
 
+  <!-- Блоки (сегменты) внутри раунда -->
+  <div class="toggle-row" id="segToggleRow" style="margin-top:12px;">
+    <div>
+      <div class="label">Разбить раунд на блоки</div>
+      <div class="sub">Своя серия на каждый отрезок времени</div>
+    </div>
+    <div class="toggle" id="t-segmentsOn"></div>
+  </div>
+  <div id="segmentsPanel" style="display:none;">
+    <div class="hint" id="segTotalHint" style="text-align:left;margin:4px 2px 10px;"></div>
+    <div id="segmentsList"></div>
+    <button class="group-add-btn" id="addSegmentBtn" style="margin-top:6px;">+ Добавить блок</button>
+  </div>
+
   <div id="orderBlock">
     <div class="setting-label" style="margin-top:14px;">Порядок в этом раунде</div>
     <div class="order-toggle" id="orderToggle">
@@ -544,13 +634,13 @@
     </div>
   </div>
 
-  <div class="builder-actions">
+  <div class="builder-actions" id="builderActions">
     <button class="ghost-btn" id="selectAllBtn">Выбрать все</button>
     <button class="ghost-btn" id="clearBtn">Очистить</button>
     <button class="ghost-btn" id="copyAllBtn">Копировать на все</button>
   </div>
 
-  <div class="setting-label" style="margin-top:4px;">Приёмы (нажми, чтобы выбрать)</div>
+  <div class="setting-label" id="movesLabel" style="margin-top:4px;">Приёмы — нажми, чтобы выбрать · ×N = чаще выпадает</div>
   <div class="move-list" id="moveList"></div>
 </div>
 
@@ -589,6 +679,17 @@
     </div>
     <button class="start-btn" id="restartBtn" style="margin-top: 0;">Новая тренировка</button>
   </div>
+</div>
+
+<!-- ============ HISTORY SCREEN ============ -->
+<div class="screen" id="history">
+  <div class="training-header" style="padding: 0 0 12px 0;">
+    <div class="round-info" style="font-size:18px;">📊 История тренировок</div>
+    <button class="done-btn" id="historyBackBtn">Готово ✓</button>
+  </div>
+  <div id="historyStats" style="display:flex;gap:8px;margin-bottom:16px;"></div>
+  <div id="historyList"></div>
+  <button class="ghost-btn" id="clearHistoryBtn" style="margin-top:12px;">Очистить историю</button>
 </div>
 
 <div class="countdown-overlay" id="countdown">
@@ -983,21 +1084,27 @@ let state = {
   finisherOn: false,
   finisherSec: 15,
   finisherMoves: [],
+  finisherWeights: {},
   finisherPaceMode: 'range', // 'fixed' | 'range' — в финишере обычно случайный темп
   finisherPaceSec: 3,
   finisherPaceMin: 1,
   finisherPaceMax: 3,
   bell: true,
+  vibrate: true,
+  // Разминка / заминка (сек), 0 = выкл
+  warmupSec: 0,
+  cooldownSec: 0,
   // per-round config. roundConfigs[i] = { moves: [названия], order: 'sequence'|'random' }
   roundConfigs: [],
   // runtime
   currentRound: 1, phase: 'work', timeLeft: 0, paused: false,
-  comboCount: 0, startTime: 0, seqPointer: 0,
+  comboCount: 0, startTime: 0, seqPointer: 0, segSeqPointer: 0,
 };
 
 let timerInterval = null, comboInterval = null;
 let voices = [], ruVoice = null;
 let editingRound = 0; // which round is being edited in builder
+let editingSegment = 0; // which segment is being edited (context 'segment-moves')
 
 // ============ HELPERS ============
 const $ = id => document.getElementById(id);
@@ -1010,6 +1117,20 @@ function fmtTime(sec) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+// Взвешенный выбор: weights = { имя: множитель }. Пусто/нет — как обычный pick.
+function weightedPick(pool, weights) {
+  if (!pool || pool.length === 0) return undefined;
+  if (!weights) return pick(pool);
+  let total = 0;
+  for (const m of pool) total += Math.max(1, weights[m] || 1);
+  if (total <= pool.length) return pick(pool); // все ×1 — обычный случай
+  let r = Math.random() * total;
+  for (const m of pool) {
+    r -= Math.max(1, weights[m] || 1);
+    if (r < 0) return m;
+  }
+  return pool[pool.length - 1];
+}
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ============ AUDIO ============
@@ -1056,6 +1177,37 @@ function playRoundEnd() {
 }
 function playTick() { playBell(1200, 0.1); }
 
+// Вибрация телефона (если поддерживается и включена)
+function vibrate(pattern) {
+  if (!state.vibrate) return;
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e) {}
+}
+
+// Деревянная колотушка — характерный «щёлк» за 10 сек до конца раунда.
+// Короткий шумовой удар через buffer + резкий спад — звучит как удар по бруску.
+function playClapper() {
+  if (!state.bell) return;
+  try {
+    const ctx = getCtx();
+    const knock = (t) => {
+      const dur = 0.06;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
+      }
+      const src = ctx.createBufferSource();
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = 1.2;
+      const g = ctx.createGain(); g.gain.value = 0.9;
+      src.buffer = buf; src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+      src.start(t);
+    };
+    const now = ctx.currentTime;
+    knock(now); knock(now + 0.12); // двойной стук
+  } catch(e) {}
+}
+
 // ============ SETUP UI ============
 function bindSlider(id, prop, valId, multiplier = 1) {
   const s = $(id), v = $(valId);
@@ -1067,6 +1219,16 @@ function bindSlider(id, prop, valId, multiplier = 1) {
   });
 }
 bindSlider('roundsSlider', 'rounds', 'roundsVal');
+function setRounds(n) {
+  n = Math.max(1, Math.min(30, n));
+  state.rounds = n;
+  $('roundsSlider').value = n;
+  $('roundsVal').textContent = n;
+  ensureRoundConfigs();
+  updateManualSummary();
+}
+$('roundsMinus').addEventListener('click', () => setRounds(state.rounds - 1));
+$('roundsPlus').addEventListener('click', () => setRounds(state.rounds + 1));
 bindSlider('workSlider', 'workSec', 'workVal', 60);
 bindSlider('restSlider', 'restSec', 'restVal');
 bindSlider('paceSlider', 'paceSec', 'paceVal');
@@ -1124,7 +1286,7 @@ $('paceMaxSlider').addEventListener('input', () => {
   updatePaceRangeHint();
 });
 
-document.querySelectorAll('[data-toggle="bell"], [data-toggle="finisherOn"]').forEach(row => {
+document.querySelectorAll('[data-toggle="bell"], [data-toggle="finisherOn"], [data-toggle="vibrate"]').forEach(row => {
   row.addEventListener('click', () => {
     const key = row.dataset.toggle;
     const t = row.querySelector('.toggle');
@@ -1133,7 +1295,21 @@ document.querySelectorAll('[data-toggle="bell"], [data-toggle="finisherOn"]').fo
     if (key === 'finisherOn') {
       $('finisherSettings').style.display = state.finisherOn ? 'block' : 'none';
     }
+    if (key === 'vibrate' && state.vibrate) vibrate([80]); // короткая проба
   });
+});
+
+// Разминка / заминка
+function fmtMin(v) { return v === 0 ? 'Выкл' : v + ' мин'; }
+$('warmupSlider').addEventListener('input', () => {
+  const v = parseInt($('warmupSlider').value);
+  state.warmupSec = v * 60;
+  $('warmupVal').textContent = fmtMin(v);
+});
+$('cooldownSlider').addEventListener('input', () => {
+  const v = parseInt($('cooldownSlider').value);
+  state.cooldownSec = v * 60;
+  $('cooldownVal').textContent = fmtMin(v);
 });
 
 // Финишер: длительность
@@ -1198,7 +1374,29 @@ function defaultRoundConfig() {
     finisherPaceSec: 3,
     finisherPaceMin: 1,
     finisherPaceMax: 3,
+    segmentsOn: false,
+    segments: [],
+    weights: {},
+    finisherWeights: {},
   };
+}
+function defaultSegment() {
+  return {
+    name: '', sec: 60, moves: [], order: 'random',
+    paceMode: 'fixed', paceSec: 5, paceMin: 2, paceMax: 7,
+    weights: {},
+  };
+}
+// Оставляем в карте весов только выбранные команды с множителем >1
+function pruneWeights(map, allowed) {
+  if (!map || typeof map !== 'object') return {};
+  const set = new Set(allowed);
+  Object.keys(map).forEach(k => {
+    const v = parseInt(map[k]);
+    if (!set.has(k) || !(v > 1)) delete map[k];
+    else map[k] = Math.min(3, v);
+  });
+  return map;
 }
 function ensureRoundConfigs() {
   while (state.roundConfigs.length < state.rounds) {
@@ -1220,6 +1418,20 @@ function ensureRoundConfigs() {
     if (c.finisherPaceSec === undefined) c.finisherPaceSec = 3;
     if (c.finisherPaceMin === undefined) c.finisherPaceMin = 1;
     if (c.finisherPaceMax === undefined) c.finisherPaceMax = 3;
+    if (c.segmentsOn === undefined) c.segmentsOn = false;
+    if (!Array.isArray(c.segments)) c.segments = [];
+    c.segments.forEach(s => {
+      if (s.sec === undefined) s.sec = 60;
+      if (s.order === undefined) s.order = 'random';
+      if (s.paceMode === undefined) s.paceMode = 'fixed';
+      if (s.paceSec === undefined) s.paceSec = 5;
+      if (s.paceMin === undefined) s.paceMin = 2;
+      if (s.paceMax === undefined) s.paceMax = 7;
+      if (!Array.isArray(s.moves)) s.moves = [];
+      s.moves = s.moves.filter(m => MOVE_LIBRARY.includes(m));
+      if (!s.weights || typeof s.weights !== 'object') s.weights = {};
+      pruneWeights(s.weights, s.moves);
+    });
     if (Array.isArray(c.moves)) {
       c.moves = c.moves
         .map(m => typeof m === 'number' ? MOVE_LIBRARY[m] : m)
@@ -1228,10 +1440,19 @@ function ensureRoundConfigs() {
       c.moves = [];
     }
     c.finisherMoves = c.finisherMoves.filter(m => MOVE_LIBRARY.includes(m));
+    if (!c.weights || typeof c.weights !== 'object') c.weights = {};
+    if (!c.finisherWeights || typeof c.finisherWeights !== 'object') c.finisherWeights = {};
+    pruneWeights(c.weights, c.moves);
+    pruneWeights(c.finisherWeights, c.finisherMoves);
   });
+  // Глобальный финишер
+  if (!state.finisherWeights || typeof state.finisherWeights !== 'object') state.finisherWeights = {};
+  pruneWeights(state.finisherWeights, state.finisherMoves);
 }
 function updateManualSummary() {
-  const filled = state.roundConfigs.filter(c => c.moves.length > 0).length;
+  const filled = state.roundConfigs.filter(c => (c.segmentsOn && (c.segments || []).length > 0)
+    ? c.segments.some(s => s.moves && s.moves.length > 0)
+    : c.moves.length > 0).length;
   if (filled === 0) {
     $('manualSummary').textContent = 'Раунды пока не заполнены';
   } else {
@@ -1259,6 +1480,7 @@ function showMoveSelector(customTitle, showRoundUI) {
     $('roundSettings').style.display = state.roundConfigs[editingRound].custom ? 'block' : 'none';
     $('copyAllBtn').style.display = '';
     $('orderBlock').style.display = '';
+    $('segToggleRow').style.display = '';
     document.querySelector('#builder .round-info').textContent = 'Конструктор';
     renderRoundTabs();
     renderOrderToggle();
@@ -1271,6 +1493,11 @@ function showMoveSelector(customTitle, showRoundUI) {
     $('roundSettings').style.display = 'none';
     $('copyAllBtn').style.display = 'none';
     $('orderBlock').style.display = 'none';
+    $('segToggleRow').style.display = 'none';
+    $('segmentsPanel').style.display = 'none';
+    $('builderActions').style.display = 'flex';
+    $('movesLabel').style.display = '';
+    $('moveList').style.display = '';
     document.querySelector('#builder .round-info').textContent = customTitle || 'Команды';
   }
   renderMoveList();
@@ -1297,7 +1524,10 @@ function renderRoundTabs() {
     const tab = document.createElement('div');
     tab.className = 'round-tab' + (i === editingRound ? ' active' : '');
     tab.innerHTML = `Р${i + 1}`;
-    const cnt = state.roundConfigs[i].moves.length;
+    const rc = state.roundConfigs[i];
+    const cnt = rc.segmentsOn
+      ? (rc.segments || []).reduce((a, s) => a + ((s.moves && s.moves.length) || 0), 0)
+      : rc.moves.length;
     if (cnt > 0) {
       const badge = document.createElement('span');
       badge.className = 'cnt';
@@ -1326,12 +1556,31 @@ let moveListCtx = 'round-moves';
 function getSelectedArray() {
   if (moveListCtx === 'global-finisher') return state.finisherMoves;
   if (moveListCtx === 'round-finisher') return state.roundConfigs[editingRound].finisherMoves;
+  if (moveListCtx === 'segment-moves') return state.roundConfigs[editingRound].segments[editingSegment].moves;
   return state.roundConfigs[editingRound].moves;
 }
 function setSelectedArray(arr) {
   if (moveListCtx === 'global-finisher') state.finisherMoves = arr;
   else if (moveListCtx === 'round-finisher') state.roundConfigs[editingRound].finisherMoves = arr;
+  else if (moveListCtx === 'segment-moves') state.roundConfigs[editingRound].segments[editingSegment].moves = arr;
   else state.roundConfigs[editingRound].moves = arr;
+}
+// Карта весов { имя: множитель } для текущего контекста
+function getWeightMap() {
+  let obj;
+  if (moveListCtx === 'global-finisher') { state.finisherWeights = state.finisherWeights || {}; obj = state.finisherWeights; }
+  else if (moveListCtx === 'round-finisher') { const c = state.roundConfigs[editingRound]; c.finisherWeights = c.finisherWeights || {}; obj = c.finisherWeights; }
+  else if (moveListCtx === 'segment-moves') { const s = state.roundConfigs[editingRound].segments[editingSegment]; s.weights = s.weights || {}; obj = s.weights; }
+  else { const c = state.roundConfigs[editingRound]; c.weights = c.weights || {}; obj = c.weights; }
+  return obj;
+}
+// Текущий/следующий множитель команды (1→2→3→1)
+function moveWeight(name) { const w = getWeightMap()[name]; return w > 1 ? Math.min(3, w) : 1; }
+function cycleWeight(name) {
+  const map = getWeightMap();
+  const cur = map[name] > 1 ? Math.min(3, map[name]) : 1;
+  const next = cur >= 3 ? 1 : cur + 1;
+  if (next <= 1) delete map[name]; else map[name] = next;
 }
 
 // Состояние сворачивания категорий инициализируется в rebuildCategories()
@@ -1360,7 +1609,7 @@ function renderMoveList() {
     header.querySelector('.cat-all-btn').addEventListener('click', e => {
       e.stopPropagation();
       const arr = getSelectedArray();
-      if (allSelected) setSelectedArray(arr.filter(m => !names.includes(m)));
+      if (allSelected) { const map = getWeightMap(); setSelectedArray(arr.filter(m => !names.includes(m))); names.forEach(n => delete map[n]); }
       else names.forEach(n => { if (!arr.includes(n)) arr.push(n); });
       refresh();
     });
@@ -1371,11 +1620,13 @@ function renderMoveList() {
 
     moves.forEach((m) => {
       const isSel = selected.includes(m.name);
+      const w = isSel ? moveWeight(m.name) : 1;
       const item = document.createElement('div');
       item.className = 'move-item' + (isSel ? ' selected' : '');
       item.innerHTML = `
         <span class="mtext">${esc(m.name)}</span>
         <span class="move-actions">
+          ${isSel ? `<button class="move-weight${w > 1 ? ' active' : ''}" title="Как часто выпадает">×${w}</button>` : ''}
           <button class="move-edit" title="Изменить">✎</button>
           <button class="move-del" title="Удалить">✕</button>
         </span>
@@ -1383,9 +1634,12 @@ function renderMoveList() {
       item.addEventListener('click', () => {
         const arr = getSelectedArray();
         const pos = arr.indexOf(m.name);
-        if (pos === -1) arr.push(m.name); else arr.splice(pos, 1);
+        if (pos === -1) arr.push(m.name);
+        else { arr.splice(pos, 1); delete getWeightMap()[m.name]; }
         refresh();
       });
+      const wb = item.querySelector('.move-weight');
+      if (wb) wb.addEventListener('click', e => { e.stopPropagation(); cycleWeight(m.name); refresh(); });
       item.querySelector('.move-edit').addEventListener('click', e => {
         e.stopPropagation();
         const v = prompt('Изменить серию:', m.name);
@@ -1524,6 +1778,129 @@ function renderRoundSettings() {
   $('rFinisherPaceMaxSlider').value = c.finisherPaceMax;
   $('rFinisherPaceMaxVal').textContent = c.finisherPaceMax;
   $('rFinisherPaceRangeHint').textContent = `Пауза будет случайной от ${c.finisherPaceMin} до ${c.finisherPaceMax} сек`;
+  // Блоки
+  $('t-segmentsOn').classList.toggle('on', !!c.segmentsOn);
+  applySegmentModeVisibility(c);
+  renderSegments();
+}
+
+// Прячем «раундовые» элементы, когда раунд в режиме блоков
+function applySegmentModeVisibility(c) {
+  const on = !!c.segmentsOn;
+  $('segmentsPanel').style.display = on ? 'block' : 'none';
+  $('orderBlock').style.display = on ? 'none' : '';
+  $('builderActions').style.display = on ? 'none' : 'flex';
+  $('movesLabel').style.display = on ? 'none' : '';
+  $('moveList').style.display = on ? 'none' : '';
+  // финишер и блоки взаимоисключающи — прячем тумблер финишера в режиме блоков
+  const rFin = $('rFinisherToggleRow');
+  if (rFin) rFin.style.display = on ? 'none' : '';
+  if (on && $('rFinisherSettings')) $('rFinisherSettings').style.display = 'none';
+}
+
+// Тумблер режима блоков
+$('t-segmentsOn').parentElement.addEventListener('click', () => {
+  const c = state.roundConfigs[editingRound];
+  c.segmentsOn = !c.segmentsOn;
+  if (c.segmentsOn && (!Array.isArray(c.segments) || c.segments.length === 0)) {
+    // Засеваем блоки по минуте под длину раунда
+    const roundSec = c.custom ? c.workSec : state.workSec;
+    const n = Math.max(1, Math.min(12, Math.round(roundSec / 60)));
+    c.segments = [];
+    for (let i = 0; i < n; i++) c.segments.push(defaultSegment());
+  }
+  renderRoundSettings();
+  renderRoundTabs();
+});
+
+$('addSegmentBtn').addEventListener('click', () => {
+  const c = state.roundConfigs[editingRound];
+  if (!Array.isArray(c.segments)) c.segments = [];
+  c.segments.push(defaultSegment());
+  renderSegments();
+});
+
+function fmtSec(s) {
+  s = parseInt(s) || 0;
+  if (s < 60) return s + ' сек';
+  const m = Math.floor(s/60), r = s%60;
+  return r === 0 ? `${m} мин` : `${m}:${r.toString().padStart(2,'0')}`;
+}
+
+function renderSegments() {
+  const c = state.roundConfigs[editingRound];
+  const list = $('segmentsList');
+  if (!list) return;
+  list.innerHTML = '';
+  const segs = Array.isArray(c.segments) ? c.segments : [];
+  const total = segs.reduce((a, s) => a + (parseInt(s.sec) || 0), 0);
+  $('segTotalHint').textContent = segs.length
+    ? `Блоков: ${segs.length} · общая длина раунда: ${fmtSec(total)}`
+    : 'Пока нет блоков — добавь первый';
+
+  segs.forEach((seg, idx) => {
+    const box = document.createElement('div');
+    box.className = 'seg-item';
+    const cmdCount = (seg.moves || []).length;
+    box.innerHTML = `
+      <div class="seg-head">
+        <span class="seg-num">Блок ${idx + 1}</span>
+        <input class="seg-name" type="text" placeholder="Название (необязательно)" value="${esc(seg.name || '')}">
+        <button class="seg-del" title="Удалить блок">×</button>
+      </div>
+      <div class="seg-row">
+        <div class="top"><span>Длительность</span><span class="val seg-dur-val">${fmtSec(seg.sec)}</span></div>
+        <input type="range" class="seg-dur" min="10" max="300" value="${parseInt(seg.sec)||60}" step="5">
+      </div>
+      <div class="seg-row">
+        <div class="top"><span>Пауза между командами</span><span class="val seg-pace-val">${seg.paceSec} сек</span></div>
+        <input type="range" class="seg-pace" min="2" max="12" value="${seg.paceSec}" step="1">
+      </div>
+      <div class="order-toggle seg-order" style="margin-bottom:8px;">
+        <div class="opt${seg.order === 'sequence' ? ' active' : ''}" data-o="sequence">По порядку</div>
+        <div class="opt${seg.order === 'random' ? ' active' : ''}" data-o="random">Случайно</div>
+      </div>
+      <button class="seg-cmd-btn${cmdCount ? ' has' : ''}">Команды блока${cmdCount ? ' · ' + cmdCount : ' — не выбраны'} →</button>
+    `;
+    // name
+    box.querySelector('.seg-name').addEventListener('input', e => { seg.name = e.target.value; });
+    // delete
+    box.querySelector('.seg-del').addEventListener('click', () => {
+      if (segs.length <= 1) { if (!confirm('Удалить единственный блок? Режим блоков останется включённым, но пустым.')) return; }
+      c.segments.splice(idx, 1);
+      renderSegments(); renderRoundTabs();
+    });
+    // duration
+    const durInp = box.querySelector('.seg-dur');
+    durInp.addEventListener('input', () => {
+      seg.sec = parseInt(durInp.value);
+      box.querySelector('.seg-dur-val').textContent = fmtSec(seg.sec);
+      const t = c.segments.reduce((a, s) => a + (parseInt(s.sec) || 0), 0);
+      $('segTotalHint').textContent = `Блоков: ${c.segments.length} · общая длина раунда: ${fmtSec(t)}`;
+    });
+    // pace
+    const paceInp = box.querySelector('.seg-pace');
+    paceInp.addEventListener('input', () => {
+      seg.paceSec = parseInt(paceInp.value);
+      seg.paceMode = 'fixed';
+      box.querySelector('.seg-pace-val').textContent = seg.paceSec + ' сек';
+    });
+    // order
+    box.querySelectorAll('.seg-order .opt').forEach(o => {
+      o.addEventListener('click', () => {
+        seg.order = o.dataset.o;
+        box.querySelectorAll('.seg-order .opt').forEach(x => x.classList.toggle('active', x.dataset.o === seg.order));
+      });
+    });
+    // commands
+    box.querySelector('.seg-cmd-btn').addEventListener('click', () => {
+      navStack.push('round-moves');
+      moveListCtx = 'segment-moves';
+      editingSegment = idx;
+      showMoveSelector('Блок ' + (idx + 1) + ': команды', false);
+    });
+    list.appendChild(box);
+  });
 }
 
 $('t-custom').parentElement.addEventListener('click', () => {
@@ -1645,6 +2022,7 @@ $('selectAllBtn').addEventListener('click', () => {
 });
 $('clearBtn').addEventListener('click', () => {
   setSelectedArray([]);
+  const map = getWeightMap(); Object.keys(map).forEach(k => delete map[k]);
   renderMoveList(); renderRoundTabs(); updateAllSummaries();
 });
 $('copyAllBtn').addEventListener('click', () => {
@@ -1668,6 +2046,10 @@ $('copyAllBtn').addEventListener('click', () => {
       finisherPaceSec: src.finisherPaceSec,
       finisherPaceMin: src.finisherPaceMin,
       finisherPaceMax: src.finisherPaceMax,
+      segmentsOn: src.segmentsOn,
+      segments: JSON.parse(JSON.stringify(src.segments || [])),
+      weights: Object.assign({}, src.weights),
+      finisherWeights: Object.assign({}, src.finisherWeights),
     };
   }
   renderRoundTabs();
@@ -1677,7 +2059,10 @@ $('copyAllBtn').addEventListener('click', () => {
 // ============ START ============
 $('startBtn').addEventListener('click', async () => {
   ensureRoundConfigs();
-  const anyFilled = state.roundConfigs.some(c => c.moves.length > 0);
+  const roundFilled = c => (c.segmentsOn && (c.segments || []).length > 0)
+    ? c.segments.some(s => s.moves && s.moves.length > 0)
+    : c.moves.length > 0;
+  const anyFilled = state.roundConfigs.some(roundFilled);
   if (!anyFilled) {
     alert('Заполни хотя бы один раунд комбинациями!');
     return;
@@ -1697,6 +2082,10 @@ $('startBtn').addEventListener('click', async () => {
   $('roundTotal').textContent = state.rounds;
 
   await prepCountdown();
+  if (state.warmupSec > 0 && $('training').classList.contains('active')) {
+    await runGuidedPhase('warmup', 'Разминка', state.warmupSec, WARMUP_CUES, '#4ade80');
+  }
+  if (!$('training').classList.contains('active')) return; // прервали
   await countdownStart();
   startRound();
 });
@@ -1750,7 +2139,7 @@ async function countdownStart() {
     await sleep(1000);
   }
   num.textContent = 'Бой!';
-  speak('Бой'); playRoundStart();
+  speak('Бой'); playRoundStart(); vibrate([200, 80, 200]);
   await sleep(800);
   overlay.classList.remove('show');
 }
@@ -1758,18 +2147,50 @@ async function countdownStart() {
 // Эффективные настройки раунда: свои (если custom) или общие с главного экрана
 function getRoundSettings(roundNum) {
   const c = state.roundConfigs[roundNum - 1];
-  if (c && c.custom) {
-    return {
-      workSec: c.workSec, restSec: c.restSec,
-      paceMode: c.paceMode, paceSec: c.paceSec,
-      paceMin: c.paceMin, paceMax: c.paceMax,
-    };
-  }
-  return {
+  const base = (c && c.custom) ? {
+    workSec: c.workSec, restSec: c.restSec,
+    paceMode: c.paceMode, paceSec: c.paceSec,
+    paceMin: c.paceMin, paceMax: c.paceMax,
+  } : {
     workSec: state.workSec, restSec: state.restSec,
     paceMode: state.paceMode, paceSec: state.paceSec,
     paceMin: state.paceMin, paceMax: state.paceMax,
   };
+  // Если раунд разбит на блоки — длина раунда = сумма длительностей блоков.
+  if (roundHasSegments(roundNum)) {
+    base.workSec = segmentsTotalSec(roundNum);
+  }
+  return base;
+}
+
+// ============ БЛОКИ (СЕГМЕНТЫ) ВНУТРИ РАУНДА ============
+// Раунд можно разбить на временны́е блоки, у каждого свой набор команд, темп и порядок.
+function roundHasSegments(roundNum) {
+  const c = state.roundConfigs[roundNum - 1];
+  return !!(c && c.segmentsOn && Array.isArray(c.segments) && c.segments.length > 0);
+}
+function getSegments(roundNum) {
+  const c = state.roundConfigs[roundNum - 1];
+  return (c && Array.isArray(c.segments)) ? c.segments : [];
+}
+function segmentsTotalSec(roundNum) {
+  return getSegments(roundNum).reduce((sum, s) => sum + (parseInt(s.sec) || 0), 0);
+}
+// Индекс активного блока по прошедшему времени раунда
+function activeSegmentIndex(roundNum) {
+  const segs = getSegments(roundNum);
+  const total = segmentsTotalSec(roundNum);
+  const elapsed = total - state.timeLeft; // сколько уже прошло с начала раунда
+  let acc = 0;
+  for (let i = 0; i < segs.length; i++) {
+    acc += (parseInt(segs[i].sec) || 0);
+    if (elapsed < acc) return i;
+  }
+  return segs.length - 1;
+}
+function getActiveSegment(roundNum) {
+  const segs = getSegments(roundNum);
+  return segs[activeSegmentIndex(roundNum)] || null;
 }
 
 function startRound() {
@@ -1778,21 +2199,47 @@ function startRound() {
   const rs = getRoundSettings(state.currentRound);
   state.timeLeft = rs.workSec;
   state.seqPointer = 0;
+  state.segSeqPointer = 0;
   $('timer').classList.remove('rest', 'finisher'); $('timer').classList.add('work');
-  $('phaseLabel').textContent = 'Работа';
+  if (roundHasSegments(state.currentRound)) {
+    $('phaseLabel').textContent = segLabel(getSegments(state.currentRound)[0]);
+  } else {
+    $('phaseLabel').textContent = 'Работа';
+  }
   updateTimer();
   startTimer();
   startCombos();
 }
 
 let wasInFinisher = false;
+let lastSegIdx = -1;
+let clapperFired = false;
 function startTimer() {
   clearInterval(timerInterval);
   wasInFinisher = false;
+  clapperFired = false;
+  lastSegIdx = roundHasSegments(state.currentRound) ? 0 : -1;
   timerInterval = setInterval(() => {
     if (state.paused) return;
     state.timeLeft--;
     updateTimer();
+
+    // Переход между блоками (сегментами)
+    if (state.phase === 'work' && roundHasSegments(state.currentRound)) {
+      const idx = activeSegmentIndex(state.currentRound);
+      if (idx !== lastSegIdx) {
+        lastSegIdx = idx;
+        state.segSeqPointer = 0;
+        const seg = getSegments(state.currentRound)[idx];
+        // Звук + вибро на смене блока
+        playBell(1100, 0.18);
+        vibrate([90, 60, 90]);
+        $('phaseLabel').textContent = segLabel(seg);
+        showNextCombo();
+        scheduleNextCombo();
+      }
+    }
+
     // Финишер-фаза: подсветка таймера и звук на старте
     const inFin = inFinisherPhase();
     if (inFin && !wasInFinisher) {
@@ -1803,9 +2250,14 @@ function startTimer() {
       playBell(1400, 0.15);
       setTimeout(() => playBell(1400, 0.15), 180);
       setTimeout(() => playBell(1400, 0.25), 360);
+      vibrate([120, 60, 120, 60, 120]);
       // Перепланируем следующую команду с финишер-темпом
       showNextCombo();
       scheduleNextCombo();
+    }
+    // Колотушка за 10 сек до конца рабочей фазы (один раз) + тики
+    if (state.phase === 'work' && state.timeLeft === 10) {
+      if (!clapperFired) { clapperFired = true; playClapper(); vibrate([50, 40, 50, 40, 50]); }
     }
     if (state.phase === 'work' && state.timeLeft > 0 && state.timeLeft <= 10) playTick();
     if (state.timeLeft <= 0) onPhaseEnd();
@@ -1814,15 +2266,34 @@ function startTimer() {
 function updateTimer() { $('timer').textContent = fmtTime(state.timeLeft); }
 
 function onPhaseEnd() {
+  // Разминка/заминка управляются своим циклом — сюда не относятся
+  if (state.phase === 'warmup' || state.phase === 'cooldown') return;
+
   clearInterval(timerInterval);
   clearTimeout(comboInterval);
   speechSynthesis.cancel();
 
   if (state.phase === 'work') {
     playRoundEnd();
-    if (state.currentRound >= state.rounds) { finishTraining(); return; }
+    vibrate([200, 100, 200]);
+    // Последний раунд — заминка (если есть) и завершение
+    if (state.currentRound >= state.rounds) {
+      if (state.cooldownSec > 0) { runCooldownThenFinish(); }
+      else finishTraining();
+      return;
+    }
+    const restSec = getRoundSettings(state.currentRound).restSec;
+    // Отдых 0 — без паузы, сразу следующий раунд
+    if (!restSec || restSec <= 0) {
+      state.currentRound++;
+      playRoundStart();
+      vibrate([200, 80, 200]);
+      speak('Раунд ' + state.currentRound);
+      setTimeout(() => startRound(), 400);
+      return;
+    }
     state.phase = 'rest';
-    state.timeLeft = getRoundSettings(state.currentRound).restSec;
+    state.timeLeft = restSec;
     $('timer').classList.add('rest'); $('timer').classList.remove('work', 'finisher');
     $('phaseLabel').textContent = 'Отдых';
     $('comboType').textContent = 'Восстановление';
@@ -1834,9 +2305,65 @@ function onPhaseEnd() {
   } else {
     state.currentRound++;
     playRoundStart();
+    vibrate([200, 80, 200]);
     speak('Раунд ' + state.currentRound);
     setTimeout(() => startRound(), 600);
   }
+}
+
+// ============ РАЗМИНКА / ЗАМИНКА ============
+const WARMUP_CUES = [
+  'Суставная гимнастика — шея, плечи, кисти',
+  'Вращения в тазу и коленях',
+  'Лёгкий бег на месте',
+  'Бой с тенью, лёгкие джебы',
+  'Разгоняй, добавь двоечки',
+  'Работа ног, челнок',
+];
+const COOLDOWN_CUES = [
+  'Восстанавливай дыхание',
+  'Шаг на месте, опусти руки',
+  'Растяжка плеч и рук',
+  'Наклоны, растяни спину',
+  'Глубокий вдох — выдох',
+];
+let guidedSkip = false;
+async function runGuidedPhase(kind, title, seconds, cues, color) {
+  state.phase = kind; // 'warmup' | 'cooldown'
+  guidedSkip = false;
+  $('timer').classList.remove('rest', 'finisher'); $('timer').classList.add('work');
+  $('phaseLabel').textContent = title;
+  $('comboType').textContent = title;
+  $('comboType').className = 'combo-type'; $('comboType').style.color = color;
+  $('comboNumbers').textContent = '';
+  $('comboText').textContent = cues[0] || '';
+  flashCombo();
+  const skip = () => { guidedSkip = true; };
+  $('skipBtn').addEventListener('click', skip);
+  $('comboDisplay').addEventListener('click', skip);
+  speak(title); playBell(700, 0.3); vibrate([100]);
+  let remaining = seconds, cueIdx = 0, lastCueAt = seconds;
+  const step = Math.max(8, Math.floor(seconds / Math.max(cues.length, 1)));
+  while (remaining > 0 && !guidedSkip && $('training').classList.contains('active')) {
+    if (!state.paused) {
+      state.timeLeft = remaining; updateTimer();
+      if (cues.length && (lastCueAt - remaining) >= step) {
+        cueIdx = (cueIdx + 1) % cues.length;
+        $('comboText').textContent = cues[cueIdx];
+        flashCombo(); speak(cues[cueIdx]);
+        lastCueAt = remaining;
+      }
+      if (remaining <= 3) { speak(String(remaining)); playTick(); }
+      remaining--;
+    }
+    await sleep(1000);
+  }
+  $('skipBtn').removeEventListener('click', skip);
+  $('comboDisplay').removeEventListener('click', skip);
+}
+async function runCooldownThenFinish() {
+  await runGuidedPhase('cooldown', 'Заминка', state.cooldownSec, COOLDOWN_CUES, '#22d3ee');
+  if ($('training').classList.contains('active')) finishTraining();
 }
 
 function nextPaceMs() {
@@ -1848,6 +2375,17 @@ function nextPaceMs() {
       return sec * 1000;
     }
     return f.paceSec * 1000;
+  }
+  // В режиме блоков — темп активного блока
+  if (roundHasSegments(state.currentRound)) {
+    const seg = getActiveSegment(state.currentRound);
+    if (seg) {
+      if (seg.paceMode === 'range') {
+        const sec = seg.paceMin + Math.random() * (seg.paceMax - seg.paceMin);
+        return sec * 1000;
+      }
+      return seg.paceSec * 1000;
+    }
   }
   const rs = getRoundSettings(state.currentRound);
   if (rs.paceMode === 'range') {
@@ -1891,13 +2429,13 @@ function getFinisherConfig(roundNum) {
   const c = state.roundConfigs[roundNum - 1];
   if (c && c.custom) {
     return {
-      on: c.finisherOn, sec: c.finisherSec, moves: c.finisherMoves,
+      on: c.finisherOn, sec: c.finisherSec, moves: c.finisherMoves, weights: c.finisherWeights || {},
       paceMode: c.finisherPaceMode, paceSec: c.finisherPaceSec,
       paceMin: c.finisherPaceMin, paceMax: c.finisherPaceMax,
     };
   }
   return {
-    on: state.finisherOn, sec: state.finisherSec, moves: state.finisherMoves,
+    on: state.finisherOn, sec: state.finisherSec, moves: state.finisherMoves, weights: state.finisherWeights || {},
     paceMode: state.finisherPaceMode, paceSec: state.finisherPaceSec,
     paceMin: state.finisherPaceMin, paceMax: state.finisherPaceMax,
   };
@@ -1906,6 +2444,7 @@ function getFinisherConfig(roundNum) {
 // В фазе ли финишера прямо сейчас?
 function inFinisherPhase() {
   if (state.phase !== 'work') return false;
+  if (roundHasSegments(state.currentRound)) return false; // в режиме блоков финишер = отдельный блок
   const f = getFinisherConfig(state.currentRound);
   if (!f.on || f.moves.length === 0) return false;
   return state.timeLeft <= f.sec;
@@ -1914,19 +2453,28 @@ function inFinisherPhase() {
 function showManualMove() {
   const cfg = state.roundConfigs[state.currentRound - 1];
   const inFin = inFinisherPhase();
+  const inSeg = roundHasSegments(state.currentRound);
 
   // Какой массив команд используем
-  let pool, isFinisher;
-  if (inFin) {
-    pool = getFinisherConfig(state.currentRound).moves;
-    isFinisher = true;
+  let pool, mode, seg = null, weights = null;
+  if (inSeg) {
+    seg = getActiveSegment(state.currentRound);
+    pool = seg ? seg.moves : [];
+    weights = seg ? seg.weights : null;
+    mode = 'segment';
+  } else if (inFin) {
+    const fc = getFinisherConfig(state.currentRound);
+    pool = fc.moves;
+    weights = fc.weights;
+    mode = 'finisher';
   } else {
     pool = cfg ? cfg.moves : [];
-    isFinisher = false;
+    weights = cfg ? cfg.weights : null;
+    mode = 'round';
   }
 
   if (!pool || pool.length === 0) {
-    $('comboType').textContent = 'Раунд не настроен';
+    $('comboType').textContent = inSeg ? (segLabel(seg) || 'Блок') : 'Раунд не настроен';
     $('comboType').className = 'combo-type'; $('comboType').style.color = '#888';
     $('comboText').textContent = 'Свободная работа';
     $('comboNumbers').textContent = '';
@@ -1934,28 +2482,43 @@ function showManualMove() {
   }
 
   let move;
-  if (isFinisher) {
-    // В финишере — всегда случайно (для разнообразия)
-    move = pick(pool);
+  if (mode === 'finisher') {
+    move = weightedPick(pool, weights);
+  } else if (mode === 'segment') {
+    if (seg.order === 'random') move = weightedPick(pool, weights);
+    else { move = pool[state.segSeqPointer % pool.length]; state.segSeqPointer++; }
   } else if (cfg.order === 'random') {
-    move = pick(pool);
+    move = weightedPick(pool, weights);
   } else {
     move = pool[state.seqPointer % pool.length];
     state.seqPointer++;
   }
 
   flashCombo();
-  if (isFinisher) {
+  if (mode === 'finisher') {
     $('comboType').textContent = '🔥 ФИНИШ';
     $('comboType').className = 'combo-type finisher';
+    $('comboType').style.color = '';
+  } else if (mode === 'segment') {
+    $('comboType').textContent = segLabel(seg) || 'Блок';
+    $('comboType').className = 'combo-type attack';
+    $('comboType').style.color = '';
   } else {
     $('comboType').textContent = 'Команда';
     $('comboType').className = 'combo-type attack';
+    $('comboType').style.color = '';
   }
-  $('comboType').style.color = '';
   $('comboText').textContent = move;
   $('comboNumbers').textContent = '';
   speak(move);
+}
+// Подпись блока: имя пользователя либо «Блок N»
+function segLabel(seg) {
+  if (!seg) return '';
+  const segs = getSegments(state.currentRound);
+  const idx = segs.indexOf(seg);
+  const num = idx >= 0 ? idx + 1 : '';
+  return (seg.name && seg.name.trim()) ? seg.name.trim() : ('Блок ' + num);
 }
 
 // ============ CONTROLS ============
@@ -1984,6 +2547,8 @@ function finishTraining() {
   $('doneRounds').textContent = state.rounds;
   $('doneTime').textContent = fmtTime(elapsed);
   $('doneCombos').textContent = state.comboCount;
+  addHistoryRecord({ ts: Date.now(), rounds: state.rounds, durationSec: elapsed, combos: state.comboCount });
+  renderHistorySummary();
   showScreen('done');
 }
 $('restartBtn').addEventListener('click', () => showScreen('setup'));
@@ -2026,11 +2591,15 @@ function snapshotWorkout() {
     finisherOn: state.finisherOn,
     finisherSec: state.finisherSec,
     finisherMoves: [...state.finisherMoves],
+    finisherWeights: Object.assign({}, state.finisherWeights),
     finisherPaceMode: state.finisherPaceMode,
     finisherPaceSec: state.finisherPaceSec,
     finisherPaceMin: state.finisherPaceMin,
     finisherPaceMax: state.finisherPaceMax,
     bell: state.bell,
+    vibrate: state.vibrate,
+    warmupSec: state.warmupSec,
+    cooldownSec: state.cooldownSec,
     roundConfigs: JSON.parse(JSON.stringify(state.roundConfigs)),
   };
 }
@@ -2044,11 +2613,15 @@ function applyWorkout(w) {
     voiceRate: w.voiceRate != null ? w.voiceRate : 1.1,
     finisherOn: !!w.finisherOn, finisherSec: w.finisherSec || 15,
     finisherMoves: Array.isArray(w.finisherMoves) ? [...w.finisherMoves] : [],
+    finisherWeights: (w.finisherWeights && typeof w.finisherWeights === 'object') ? Object.assign({}, w.finisherWeights) : {},
     finisherPaceMode: w.finisherPaceMode || 'range',
     finisherPaceSec: w.finisherPaceSec || 3,
     finisherPaceMin: w.finisherPaceMin || 1,
     finisherPaceMax: w.finisherPaceMax || 3,
     bell: w.bell !== false,
+    vibrate: w.vibrate !== false,
+    warmupSec: w.warmupSec || 0,
+    cooldownSec: w.cooldownSec || 0,
   });
   state.roundConfigs = Array.isArray(w.roundConfigs) ? JSON.parse(JSON.stringify(w.roundConfigs)) : [];
   ensureRoundConfigs();
@@ -2072,8 +2645,14 @@ function syncSetupUI() {
   $('paceRangeHint').textContent = `Пауза будет случайной от ${state.paceMin} до ${state.paceMax} сек`;
   // voice
   $('voiceRateSlider').value = Math.round(state.voiceRate*10); $('voiceRateVal').textContent = state.voiceRate.toFixed(1)+'×';
-  // bell
+  // bell + вибро
   $('t-bell').classList.toggle('on', state.bell);
+  $('t-vibrate').classList.toggle('on', state.vibrate);
+  // разминка / заминка
+  $('warmupSlider').value = Math.round(state.warmupSec / 60);
+  $('warmupVal').textContent = fmtMin(Math.round(state.warmupSec / 60));
+  $('cooldownSlider').value = Math.round(state.cooldownSec / 60);
+  $('cooldownVal').textContent = fmtMin(Math.round(state.cooldownSec / 60));
   // finisher
   $('t-finisherOn').classList.toggle('on', state.finisherOn);
   $('finisherSettings').style.display = state.finisherOn ? 'block' : 'none';
@@ -2148,10 +2727,146 @@ $('saveWorkoutBtn').addEventListener('click', () => {
   alert(`Сохранено: «${trimmed}»`);
 });
 
+// ============ ИСТОРИЯ ТРЕНИРОВОК ============
+const HISTORY_KEY = 'boxing_history_v1';
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveHistoryArr(arr) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-200))); } catch(e) {}
+}
+function addHistoryRecord(rec) { const a = loadHistory(); a.push(rec); saveHistoryArr(a); }
+function fmtDateShort(ts) {
+  const d = new Date(ts), p = n => n.toString().padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function renderHistorySummary() {
+  const a = loadHistory(), el = $('historySummary');
+  if (!el) return;
+  if (!a.length) { el.textContent = 'Пока нет завершённых тренировок'; return; }
+  const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
+  const wk = a.filter(r => r.ts >= weekAgo);
+  const wkRounds = wk.reduce((s, r) => s + (r.rounds || 0), 0);
+  el.textContent = `Всего: ${a.length} · за неделю: ${wk.length} трен. (${wkRounds} раундов)`;
+}
+function renderHistoryScreen() {
+  const a = loadHistory().slice().reverse();
+  const total = a.length;
+  const totalRounds = a.reduce((s, r) => s + (r.rounds || 0), 0);
+  const totalSec = a.reduce((s, r) => s + (r.durationSec || 0), 0);
+  $('historyStats').innerHTML = `
+    <div class="hstat"><div class="hstat-v">${total}</div><div class="hstat-l">тренировок</div></div>
+    <div class="hstat"><div class="hstat-v">${totalRounds}</div><div class="hstat-l">раундов</div></div>
+    <div class="hstat"><div class="hstat-v">${Math.round(totalSec / 60)}</div><div class="hstat-l">минут</div></div>`;
+  const list = $('historyList');
+  list.innerHTML = '';
+  if (!a.length) { list.innerHTML = '<div class="workout-empty">Пусто</div>'; return; }
+  a.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'workout-item';
+    item.style.cursor = 'default';
+    item.innerHTML = `<div style="flex:1;"><div class="wname">${fmtDateShort(r.ts)}</div>
+      <div class="wmeta">${r.rounds} раунд(ов) · ${fmtTime(r.durationSec || 0)} · команд ${r.combos || 0}</div></div>`;
+    list.appendChild(item);
+  });
+}
+$('openHistoryBtn').addEventListener('click', () => { renderHistoryScreen(); showScreen('history'); });
+$('historyBackBtn').addEventListener('click', () => showScreen('setup'));
+$('clearHistoryBtn').addEventListener('click', () => {
+  if (confirm('Очистить всю историю?')) { saveHistoryArr([]); renderHistoryScreen(); renderHistorySummary(); }
+});
+
+// ============ ГОТОВЫЕ ПРОГРАММЫ (ПРЕСЕТЫ) ============
+function presetRounds(n, moves, order) {
+  const arr = [];
+  for (let i = 0; i < n; i++) arr.push({ moves: [...moves], order: order || 'random', custom: false, segmentsOn: false, segments: [] });
+  return arr;
+}
+function makePreset(name, opts) {
+  return Object.assign({
+    name, rounds: 3, prepSec: 15, workSec: 180, restSec: 60,
+    paceSec: 5, paceMode: 'fixed', paceMin: 2, paceMax: 7, voiceRate: 1.1,
+    finisherOn: false, finisherSec: 15, finisherMoves: [], finisherPaceMode: 'range',
+    finisherPaceSec: 3, finisherPaceMin: 1, finisherPaceMax: 3,
+    bell: true, vibrate: true, warmupSec: 0, cooldownSec: 0, roundConfigs: [],
+  }, opts);
+}
+
+// Один раунд, разбитый по минутам на 3 блока — образец для «поминутной» работы
+function minuteRound() {
+  return {
+    moves: [], order: 'random', custom: false, segmentsOn: true,
+    segments: [
+      { name: 'Прямые', sec: 60, order: 'random', paceMode: 'fixed', paceSec: 4, paceMin: 2, paceMax: 7,
+        moves: ['Три прямых', 'Четыре прямых', 'Двойка', 'Джеб хук'] },
+      { name: 'Боковые и снизу', sec: 60, order: 'random', paceMode: 'fixed', paceSec: 4, paceMin: 2, paceMax: 7,
+        moves: ['Левый хук', 'Правый хук', 'Два прямых два снизу', 'Слевой два боковых'] },
+      { name: 'Добивание', sec: 60, order: 'random', paceMode: 'fixed', paceSec: 3, paceMin: 1, paceMax: 3,
+        moves: ['Двойка', 'Хук кросс хук', 'Кросс хук кросс', 'Почтальон'] },
+    ],
+  };
+}
+
+const BUILTIN_PRESETS = [
+  makePreset('Техника — база', {
+    rounds: 3, workSec: 180, restSec: 60, paceMode: 'fixed', paceSec: 5,
+    roundConfigs: presetRounds(3, ['Джеб', 'Двойка', 'Три прямых', 'Джеб хук', 'Кросс хук кросс', 'Левый хук', 'Правый хук'], 'random'),
+  }),
+  makePreset('Скоростная', {
+    rounds: 5, workSec: 120, restSec: 45, paceMode: 'range', paceMin: 2, paceMax: 4,
+    finisherOn: true, finisherSec: 15, finisherPaceMode: 'range', finisherPaceMin: 1, finisherPaceMax: 2,
+    finisherMoves: ['Джеб', 'Двойка', 'Три джеба'],
+    roundConfigs: presetRounds(5, ['Джеб', 'Двойка', 'Джеб хук', 'Два джеба', 'Три прямых'], 'random'),
+  }),
+  makePreset('Защита и контратака', {
+    rounds: 4, workSec: 180, restSec: 60, paceMode: 'range', paceMin: 3, paceMax: 5,
+    roundConfigs: presetRounds(4, ['Уклон влево', 'Уклон вправо', 'Нырок влево', 'Нырок вправо', 'Два нырка', 'Уклон нырок', 'Двойка ушёл кросс', 'Маятник'], 'random'),
+  }),
+  makePreset('Функционалка (по минутам)', {
+    rounds: 3, workSec: 180, restSec: 60,
+    roundConfigs: [minuteRound(), minuteRound(), minuteRound()],
+  }),
+  makePreset('Спарринг-подготовка', {
+    rounds: 6, workSec: 180, restSec: 60, paceMode: 'range', paceMin: 2, paceMax: 5,
+    finisherOn: true, finisherSec: 20, finisherPaceMode: 'range', finisherPaceMin: 1, finisherPaceMax: 3,
+    finisherMoves: ['Двойка', 'Хук кросс хук', 'Двойка боковой'],
+    warmupSec: 300, cooldownSec: 180,
+    roundConfigs: presetRounds(6, ['Джеб', 'Двойка', 'Джеб хук джеб', 'Уклон вправо', 'Нырок влево', 'Двойка ушёл кросс', 'Левый хук', 'Два прямых два снизу'], 'random'),
+  }),
+];
+
+function presetMeta(p) {
+  const bits = [`${p.rounds}×${Math.round(p.workSec / 60)} мин`];
+  if (p.restSec > 0) bits.push(`отдых ${p.restSec}с`); else bits.push('без отдыха');
+  if (p.roundConfigs.some(c => c.segmentsOn)) bits.push('по минутам');
+  if (p.finisherOn) bits.push('финишер');
+  if (p.warmupSec) bits.push('+разминка');
+  return bits.join(' · ');
+}
+function renderPresets() {
+  const list = $('presetsList');
+  if (!list) return;
+  list.innerHTML = '';
+  BUILTIN_PRESETS.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'preset-item';
+    item.innerHTML = `<div style="flex:1;"><div class="pname">${esc(p.name)}</div><div class="pmeta">${presetMeta(p)}</div></div><span class="parrow">→</span>`;
+    item.addEventListener('click', () => {
+      applyWorkout(JSON.parse(JSON.stringify(p)));
+      try { getCtx(); } catch(e) {}
+      alert(`Загружена программа «${p.name}». Можно начинать или доработать под себя.`);
+      window.scrollTo(0, 0);
+    });
+    list.appendChild(item);
+  });
+}
+
 // ============ INIT ============
 ensureRoundConfigs();
 updateManualSummary();
 renderWorkouts();
+renderPresets();
+renderHistorySummary();
 
 // ============ PWA: register service worker ============
 if ('serviceWorker' in navigator) {
