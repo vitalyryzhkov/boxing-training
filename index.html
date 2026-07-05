@@ -481,11 +481,22 @@
   <div class="setting-group">
     <div class="setting-label">Звук</div>
     <div class="toggle-row" data-toggle="bell">
-      <div><div class="label">Гонг</div><div class="sub">Начало и конец раундов + колотушка за 10 сек</div></div>
+      <div><div class="label">Гонг</div><div class="sub">Начало и конец раундов</div></div>
       <div class="toggle on" id="t-bell"></div>
     </div>
+    <div class="slider-row" id="gongTypeRow">
+      <div class="top" style="margin-bottom:10px;">
+        <span>Звук гонга</span>
+        <button class="ghost-btn" id="gongTestBtn" style="margin:0;padding:7px 14px;width:auto;">▶ Проба</button>
+      </div>
+      <div class="order-toggle" id="gongTypeToggle" style="margin-bottom:0;">
+        <div class="opt" data-gong="soft">Мягкий</div>
+        <div class="opt active" data-gong="bell">Колокол</div>
+        <div class="opt" data-gong="boxing">Ринг</div>
+      </div>
+    </div>
     <div class="toggle-row" data-toggle="vibrate">
-      <div><div class="label">Вибрация</div><div class="sub">Гонг, колотушка, смена блока</div></div>
+      <div><div class="label">Вибрация</div><div class="sub">Гонг, смена блока, старт раунда</div></div>
       <div class="toggle on" id="t-vibrate"></div>
     </div>
   </div>
@@ -1090,6 +1101,7 @@ let state = {
   finisherPaceMin: 1,
   finisherPaceMax: 3,
   bell: true,
+  gongType: 'bell', // 'soft' | 'bell' | 'boxing'
   vibrate: true,
   // Разминка / заминка (сек), 0 = выкл
   warmupSec: 0,
@@ -1157,13 +1169,36 @@ function playBell(freq = 800, duration = 0.6) {
   if (!state.bell) return;
   try {
     const ctx = getCtx();
-    const osc = ctx.createOscillator(), gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type = 'sine'; osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    osc.start(); osc.stop(ctx.currentTime + duration);
+    const t0 = ctx.currentTime;
+    const type = state.gongType || 'bell';
+    if (type === 'soft') {
+      // Мягкий синус — как было раньше
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(0.4, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+      osc.start(); osc.stop(t0 + duration);
+      return;
+    }
+    // Богатый металлический гонг: негармоничные обертоны + длинный спад
+    const partials = type === 'boxing'
+      ? [[1, 1.0], [2.76, 0.6], [5.4, 0.32], [8.9, 0.16]]   // яркий ринг-гонг
+      : [[1, 1.0], [2.0, 0.5], [2.97, 0.3], [4.2, 0.16]];   // металлический колокол
+    const dur = duration * (type === 'boxing' ? 1.6 : 1.3); // подлиннее звон
+    const master = ctx.createGain();
+    master.connect(ctx.destination);
+    master.gain.setValueAtTime(0.0001, t0);
+    master.gain.exponentialRampToValueAtTime(0.6, t0 + 0.006);
+    master.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    partials.forEach(([mult, amp]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = freq * mult;
+      g.gain.value = amp;
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur);
+    });
   } catch(e) {}
 }
 function playRoundStart() {
@@ -1181,31 +1216,6 @@ function playTick() { playBell(1200, 0.1); }
 function vibrate(pattern) {
   if (!state.vibrate) return;
   try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e) {}
-}
-
-// Деревянная колотушка — характерный «щёлк» за 10 сек до конца раунда.
-// Короткий шумовой удар через buffer + резкий спад — звучит как удар по бруску.
-function playClapper() {
-  if (!state.bell) return;
-  try {
-    const ctx = getCtx();
-    const knock = (t) => {
-      const dur = 0.06;
-      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
-      }
-      const src = ctx.createBufferSource();
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = 1.2;
-      const g = ctx.createGain(); g.gain.value = 0.9;
-      src.buffer = buf; src.connect(bp); bp.connect(g); g.connect(ctx.destination);
-      src.start(t);
-    };
-    const now = ctx.currentTime;
-    knock(now); knock(now + 0.12); // двойной стук
-  } catch(e) {}
 }
 
 // ============ SETUP UI ============
@@ -1295,8 +1305,31 @@ document.querySelectorAll('[data-toggle="bell"], [data-toggle="finisherOn"], [da
     if (key === 'finisherOn') {
       $('finisherSettings').style.display = state.finisherOn ? 'block' : 'none';
     }
+    if (key === 'bell') {
+      $('gongTypeRow').style.display = state.bell ? '' : 'none';
+      if (state.bell) { try { getCtx(); } catch(e) {} playRoundStart(); }
+    }
     if (key === 'vibrate' && state.vibrate) vibrate([80]); // короткая проба
   });
+});
+
+// Выбор звука гонга
+$('gongTypeToggle').addEventListener('click', e => {
+  const opt = e.target.closest('.opt');
+  if (!opt) return;
+  state.gongType = opt.dataset.gong;
+  document.querySelectorAll('#gongTypeToggle .opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.gong === state.gongType));
+  try { getCtx(); } catch(e) {}
+  const wasBell = state.bell; state.bell = true; // проба звучит даже если гонг выключен
+  playBell(900, 0.5);
+  state.bell = wasBell;
+});
+$('gongTestBtn').addEventListener('click', () => {
+  try { getCtx(); } catch(e) {}
+  const wasBell = state.bell; state.bell = true;
+  playRoundStart();
+  state.bell = wasBell;
 });
 
 // Разминка / заминка
@@ -2213,11 +2246,9 @@ function startRound() {
 
 let wasInFinisher = false;
 let lastSegIdx = -1;
-let clapperFired = false;
 function startTimer() {
   clearInterval(timerInterval);
   wasInFinisher = false;
-  clapperFired = false;
   lastSegIdx = roundHasSegments(state.currentRound) ? 0 : -1;
   timerInterval = setInterval(() => {
     if (state.paused) return;
@@ -2255,10 +2286,7 @@ function startTimer() {
       showNextCombo();
       scheduleNextCombo();
     }
-    // Колотушка за 10 сек до конца рабочей фазы (один раз) + тики
-    if (state.phase === 'work' && state.timeLeft === 10) {
-      if (!clapperFired) { clapperFired = true; playClapper(); vibrate([50, 40, 50, 40, 50]); }
-    }
+    // Последние 10 сек рабочей фазы — короткие тики
     if (state.phase === 'work' && state.timeLeft > 0 && state.timeLeft <= 10) playTick();
     if (state.timeLeft <= 0) onPhaseEnd();
   }, 1000);
@@ -2597,6 +2625,7 @@ function snapshotWorkout() {
     finisherPaceMin: state.finisherPaceMin,
     finisherPaceMax: state.finisherPaceMax,
     bell: state.bell,
+    gongType: state.gongType,
     vibrate: state.vibrate,
     warmupSec: state.warmupSec,
     cooldownSec: state.cooldownSec,
@@ -2619,6 +2648,7 @@ function applyWorkout(w) {
     finisherPaceMin: w.finisherPaceMin || 1,
     finisherPaceMax: w.finisherPaceMax || 3,
     bell: w.bell !== false,
+    gongType: w.gongType || 'bell',
     vibrate: w.vibrate !== false,
     warmupSec: w.warmupSec || 0,
     cooldownSec: w.cooldownSec || 0,
@@ -2648,6 +2678,10 @@ function syncSetupUI() {
   // bell + вибро
   $('t-bell').classList.toggle('on', state.bell);
   $('t-vibrate').classList.toggle('on', state.vibrate);
+  // тип гонга
+  document.querySelectorAll('#gongTypeToggle .opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.gong === (state.gongType || 'bell')));
+  $('gongTypeRow').style.display = state.bell ? '' : 'none';
   // разминка / заминка
   $('warmupSlider').value = Math.round(state.warmupSec / 60);
   $('warmupVal').textContent = fmtMin(Math.round(state.warmupSec / 60));
