@@ -330,7 +330,7 @@
   .control-btn:active { transform: scale(0.96); }
   .control-btn.primary { background: #3b82f6; border-color: #3b82f6; }
   .control-btn.danger { background: transparent; color: #3b82f6; border-color: #3b82f6; }
-  .control-btn.nav { flex: 0 0 78px; font-size: 14px; color: #93b4f0; border-color: #2a3650; padding: 14px 6px; }
+  .control-btn.nav { flex: 1; font-size: 14px; color: #93b4f0; border-color: #2a3650; padding: 14px 4px; }
   .control-btn.nav:disabled { opacity: 0.3; }
   .controls.secondary { border-top: none; padding-top: 0; }
 
@@ -366,12 +366,15 @@
   .hstat-l { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
   /* Перетаскивание серий внутри группы */
   .move-item .drag-handle {
-    flex-shrink: 0; width: 26px; height: 30px; margin-right: 8px;
+    flex-shrink: 0; width: 38px; align-self: stretch; margin: -13px 6px -13px -16px;
     display: flex; align-items: center; justify-content: center;
-    color: #5a6a85; font-size: 16px; line-height: 1; cursor: grab;
-    border-radius: 7px; touch-action: none; user-select: none;
+    color: #6d7f9c; font-size: 19px; line-height: 1; cursor: grab;
+    border-radius: 10px 0 0 10px; touch-action: none; user-select: none;
+    background: #202631; border-right: 1px solid #2a2a2a;
   }
-  .move-item .drag-handle:active { background: #1c2740; color: #93b4f0; cursor: grabbing; }
+  .move-item.selected .drag-handle { background: #17351f; border-right-color: #1f5233; color: #6fae86; }
+  .move-item .drag-handle:active { background: #24457a; color: #cfe2ff; cursor: grabbing; }
+  body.drag-active { user-select: none; touch-action: none; }
   .move-item.dragging {
     opacity: 0.9; border-color: #3b82f6; background: #16233c;
     box-shadow: 0 6px 18px rgba(0,0,0,0.55); transform: scale(1.02);
@@ -681,9 +684,9 @@
     <div class="combo-numbers" id="comboNumbers"></div>
   </div>
   <div class="controls">
-    <button class="control-btn nav" id="prevRoundBtn">◀ Раунд</button>
-    <button class="control-btn" id="skipBtn">Дальше</button>
-    <button class="control-btn nav" id="nextRoundBtn">Раунд ▶</button>
+    <button class="control-btn nav" id="prevRoundBtn">◀ Назад</button>
+    <button class="control-btn" id="skipBtn">Команда</button>
+    <button class="control-btn nav" id="nextRoundBtn">Пропуск ▶</button>
   </div>
   <div class="controls secondary">
     <button class="control-btn primary" id="pauseBtn">Пауза</button>
@@ -1177,7 +1180,7 @@ let state = {
   comboCount: 0, startTime: 0, seqPointer: 0, segSeqPointer: 0,
 };
 
-let timerInterval = null, comboInterval = null;
+let timerInterval = null, comboInterval = null, phaseTimeout = null;
 let voices = [], ruVoice = null;
 let editingRound = 0; // which round is being edited in builder
 let editingSegment = 0; // which segment is being edited (context 'segment-moves')
@@ -1684,52 +1687,106 @@ function cycleWeight(name) {
 // Состояние сворачивания категорий инициализируется в rebuildCategories()
 
 // ---- перетаскивание серий внутри группы ----
-// Держим палец на ручке ⠿ и ведём вверх/вниз — серия меняется местами с соседями.
-// Переставлять можно только внутри своей группы.
+// Держим палец на ручке ⠿ и ведём вверх/вниз. Позицию считаем по координате пальца
+// относительно середин соседних серий — надёжнее, чем ловить элемент под пальцем
+// (между строками есть зазор, там ничего не находится).
+// Слушатели вешаем на document, иначе события теряются, как только палец
+// уходит с маленькой ручки.
 function attachDragHandle(handle, item, onDrop) {
   if (!handle) return;
-  // чтобы тап по ручке не переключал выбор серии
+  // тап по ручке не должен переключать выбор серии
   handle.addEventListener('click', e => { e.stopPropagation(); });
-  handle.addEventListener('pointerdown', e => {
-    if (e.button != null && e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const list = item.parentElement;
-    const gkey = item.dataset.gkey;
-    let moved = false;
-    item.classList.add('dragging');
-    try { handle.setPointerCapture(e.pointerId); } catch (err) {}
 
-    const onMove = ev => {
-      ev.preventDefault();
-      const under = document.elementFromPoint(ev.clientX, ev.clientY);
-      if (!under) return;
-      const target = under.closest ? under.closest('.move-item') : null;
-      if (!target || target === item) return;
-      if (target.dataset.gkey !== gkey) return; // не выпускаем из своей группы
-      const r = target.getBoundingClientRect();
-      const after = ev.clientY > r.top + r.height / 2;
-      list.insertBefore(item, after ? target.nextSibling : target);
-      moved = true;
-    };
-    const onEnd = () => {
-      handle.removeEventListener('pointermove', onMove);
-      handle.removeEventListener('pointerup', onEnd);
-      handle.removeEventListener('pointercancel', onEnd);
-      item.classList.remove('dragging');
-      if (moved) {
-        const uids = Array.from(list.querySelectorAll('.move-item'))
-          .filter(x => x.dataset.gkey === gkey)
-          .map(x => x.dataset.uid);
-        setMoveOrder(gkey, uids);
-        vibrate([30]);
-        onDrop();
-      }
-    };
-    handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup', onEnd);
-    handle.addEventListener('pointercancel', onEnd);
-  });
+  let dragging = false, moved = false, gkey = '', list = null, cleanup = null;
+
+  const siblings = () => Array.from(list.children).filter(x =>
+    x.classList && x.classList.contains('move-item') && x.dataset.gkey === gkey);
+
+  function moveTo(y) {
+    const others = siblings().filter(x => x !== item);
+    if (!others.length) return;
+    // сколько соседей находится выше пальца — туда и вставляем
+    let idx = others.length;
+    for (let i = 0; i < others.length; i++) {
+      const r = others[i].getBoundingClientRect();
+      if (y < r.top + r.height / 2) { idx = i; break; }
+    }
+    const ref = others[idx];
+    if (ref) {
+      if (item.nextSibling !== ref) { list.insertBefore(item, ref); moved = true; }
+    } else {
+      const last = others[others.length - 1];
+      if (last.nextSibling !== item) { list.insertBefore(item, last.nextSibling); moved = true; }
+    }
+  }
+
+  function begin() {
+    dragging = true; moved = false;
+    list = item.parentElement;
+    gkey = item.dataset.gkey;
+    item.classList.add('dragging');
+    document.body.classList.add('drag-active');
+    vibrate([15]);
+  }
+
+  function finish() {
+    if (!dragging) return;
+    dragging = false;
+    item.classList.remove('dragging');
+    document.body.classList.remove('drag-active');
+    if (cleanup) { cleanup(); cleanup = null; }
+    if (moved) {
+      setMoveOrder(gkey, siblings().map(x => x.dataset.uid));
+      vibrate([25]);
+      onDrop();
+    }
+  }
+
+  if (window.PointerEvent) {
+    handle.addEventListener('pointerdown', e => {
+      if (e.button != null && e.button > 0) return;
+      e.preventDefault(); e.stopPropagation();
+      begin();
+      const mv = ev => { if (dragging) { ev.preventDefault(); moveTo(ev.clientY); } };
+      const up = () => finish();
+      document.addEventListener('pointermove', mv, { passive: false });
+      document.addEventListener('pointerup', up);
+      document.addEventListener('pointercancel', up);
+      cleanup = () => {
+        document.removeEventListener('pointermove', mv);
+        document.removeEventListener('pointerup', up);
+        document.removeEventListener('pointercancel', up);
+      };
+    });
+  } else {
+    // запасной вариант для старых браузеров без Pointer Events
+    handle.addEventListener('touchstart', e => {
+      e.preventDefault(); e.stopPropagation();
+      begin();
+      const mv = ev => { if (dragging && ev.touches[0]) { ev.preventDefault(); moveTo(ev.touches[0].clientY); } };
+      const up = () => finish();
+      document.addEventListener('touchmove', mv, { passive: false });
+      document.addEventListener('touchend', up);
+      document.addEventListener('touchcancel', up);
+      cleanup = () => {
+        document.removeEventListener('touchmove', mv);
+        document.removeEventListener('touchend', up);
+        document.removeEventListener('touchcancel', up);
+      };
+    }, { passive: false });
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault(); e.stopPropagation();
+      begin();
+      const mv = ev => { if (dragging) { ev.preventDefault(); moveTo(ev.clientY); } };
+      const up = () => finish();
+      document.addEventListener('mousemove', mv);
+      document.addEventListener('mouseup', up);
+      cleanup = () => {
+        document.removeEventListener('mousemove', mv);
+        document.removeEventListener('mouseup', up);
+      };
+    });
+  }
 }
 
 function renderMoveList() {
@@ -2430,8 +2487,13 @@ function startTimer() {
 function updateTimer() { $('timer').textContent = fmtTime(state.timeLeft); }
 
 function onPhaseEnd() {
+  // Переход к следующему раунду идёт с небольшой задержкой (гонг успевает отзвучать).
+  // Пока он в процессе — повторные нажатия «Пропуск» игнорируем, иначе
+  // быстрым двойным тапом можно проскочить сразу два раунда.
+  if (state.phase === 'transition') return;
   clearInterval(timerInterval);
   clearTimeout(comboInterval);
+  clearTimeout(phaseTimeout);
   speechSynthesis.cancel();
 
   if (state.phase === 'work') {
@@ -2445,10 +2507,11 @@ function onPhaseEnd() {
     // Отдых 0 — без паузы, сразу следующий раунд
     if (!restSec || restSec <= 0) {
       state.currentRound++;
+      state.phase = 'transition';
       playRoundStart();
       vibrate([200, 80, 200]);
       speak('Раунд ' + state.currentRound);
-      setTimeout(() => startRound(), 400);
+      phaseTimeout = setTimeout(() => startRound(), 400);
       return;
     }
     state.phase = 'rest';
@@ -2463,10 +2526,11 @@ function onPhaseEnd() {
     updateTimer(); startTimer();
   } else {
     state.currentRound++;
+    state.phase = 'transition';
     playRoundStart();
     vibrate([200, 80, 200]);
     speak('Раунд ' + state.currentRound);
-    setTimeout(() => startRound(), 600);
+    phaseTimeout = setTimeout(() => startRound(), 600);
   }
 }
 
@@ -2642,6 +2706,7 @@ function gotoRound(n) {
   n = Math.max(1, Math.min(state.rounds, n));
   clearInterval(timerInterval);
   clearTimeout(comboInterval);
+  clearTimeout(phaseTimeout);
   speechSynthesis.cancel();
   state.currentRound = n;
   state.paused = false;
@@ -2656,8 +2721,12 @@ $('prevRoundBtn').addEventListener('click', () => {
   gotoRound(state.phase === 'rest' ? state.currentRound : state.currentRound - 1);
 });
 $('nextRoundBtn').addEventListener('click', () => {
-  if (state.currentRound >= state.rounds) return;
-  gotoRound(state.currentRound + 1);
+  if (!$('training').classList.contains('active')) return;
+  state.paused = false;
+  $('pauseBtn').textContent = 'Пауза';
+  // Шагаем строго по порядку: работа → отдых → следующий раунд.
+  // onPhaseEnd сам решает, что дальше (в т.ч. завершает тренировку на последнем раунде).
+  onPhaseEnd();
 });
 // Тап по названию — переименовать текущий раунд не выходя с таймера
 $('roundNameLine').addEventListener('click', () => {
@@ -2676,7 +2745,7 @@ $('backBtn').addEventListener('click', () => {
   if (confirm('Выйти из тренировки?')) { cleanup(); showScreen('setup'); }
 });
 function cleanup() {
-  clearInterval(timerInterval); clearTimeout(comboInterval);
+  clearInterval(timerInterval); clearTimeout(comboInterval); clearTimeout(phaseTimeout);
   speechSynthesis.cancel(); releaseWakeLock();
 }
 function finishTraining() {
